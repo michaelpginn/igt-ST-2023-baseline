@@ -294,9 +294,10 @@ def main():
     model_input_length = 512
     dataset, vocab_size, encoder = prepare_data(path='../data/kor.xml', model_input_length=model_input_length)
     model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
-    trainer = create_trainer(model, dataset, encoder, batch_size=32, lr=2e-5, max_epochs=20)
+    trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
     print("Training...")
     trainer.train()
+    print("Saving model to ./output")
     trainer.save_model('./output')
     print("Model saved at ./output")
 
