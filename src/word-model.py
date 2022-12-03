@@ -49,11 +49,14 @@ def load_preprocess_data(path):
             corpus_data.append(igt_data)
             all_good_count += 1
         except MissingValueError as v:
-            match str(v):
-                case 'words': missing_words_count += 1
-                case 'translation': missing_translation_count += 1
-                case 'glosses': missing_gloss_count += 1
-                case 'alignments': missing_aligments_count += 1
+            if str(v) == 'words': 
+                missing_words_count += 1
+            elif str(v) == 'translation':
+                missing_translation_count += 1
+            elif str(v) == 'glosses':
+                missing_gloss_count += 1
+            elif str(v) == 'alignments':
+                missing_aligments_count += 1
 
     print(f"Parsed corpus, with \n\t{all_good_count} good rows\n\t{missing_words_count} rows missing words\
             \n\t{missing_translation_count} missing translations\n\t{missing_gloss_count} missing glosses")
