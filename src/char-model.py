@@ -130,7 +130,7 @@ class IntegerEncoder():
                 indices = seq.tolist()
             return [self.chars[index] for index in indices if index >= len(special_chars)]
 
-        return [decode(seq) for seq in batch]
+        return ["".join(decode(seq)).split() for seq in batch]
     
     def vocab_size(self):
         return len(self.chars)
@@ -242,11 +242,11 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
             preds = preds[0]
 
         # Decode predicted output
-        decoded_preds = encoder.batch_decode(preds).split()
+        decoded_preds = encoder.batch_decode(preds)
 
         # Decode (gold) labels
         labels = np.where(labels != -100, labels, PAD_ID)
-        decoded_labels = encoder.batch_decode(labels).split()
+        decoded_labels = encoder.batch_decode(labels)
 
         bleu = bleu_score(decoded_preds, [[seq] for seq in decoded_labels])
 
