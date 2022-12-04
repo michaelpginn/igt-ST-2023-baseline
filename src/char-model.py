@@ -55,8 +55,6 @@ def load_preprocess_data(path):
                missing_translation_count += 1
             elif str(v) == 'glosses':
                 missing_gloss_count += 1
-            elif str(v) == 'alignments':
-                missing_aligments_count += 1
 
     print(f"Parsed corpus, with \n\t{all_good_count} good rows\n\t{missing_words_count} rows missing words\
             \n\t{missing_translation_count} missing translations\n\t{missing_gloss_count} missing glosses")
@@ -294,9 +292,8 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
 def main():
     model_input_length = 512
     dataset, vocab_size, encoder = prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
-
     model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
-    trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=500)
+    trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
     print("Training...")
     trainer.train()
     print("Saving model to ./output")
