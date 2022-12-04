@@ -162,7 +162,10 @@ def convert_to_dataset(encoder, train, dev, test, model_input_length):
 
         # Pad
         initial_length = len(combined_enc)
-        combined_enc += [PAD_ID] * (model_input_length - initial_length)
+        if initial_length > model_input_length:
+            combined_enc = combined_enc[:model_input_length]
+        else:
+            combined_enc += [PAD_ID] * (model_input_length - initial_length)
 
         # Create attention mask
         attention_mask = [1] * initial_length + [0] * (model_input_length - initial_length)
@@ -291,6 +294,7 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
 def main():
     model_input_length = 512
     dataset, vocab_size, encoder = prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
+
     model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
     trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
     print("Training...")
