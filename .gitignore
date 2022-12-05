@@ -213,3 +213,10 @@ poetry.toml
 
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,python,jupyternotebooks
+#
+#
+src/output/
+tokenizer-merges.txt
+tokenizer-vocab.json
+training-checkpoints/
+all_text.txt
