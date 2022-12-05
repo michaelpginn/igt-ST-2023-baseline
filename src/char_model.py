@@ -93,7 +93,8 @@ SPACE_ID = special_chars.index(" ")
 class IntegerEncoder():
     """Encodes and decodes chars to an integer representation"""
     def __init__(self, chars):
-        self.chars = chars
+        self.chars = specialchars + chars
+        self.all_vocab = chars
 
     
     def encode_word(self, word):
@@ -294,7 +295,7 @@ def main():
     model_input_length = 512
     dataset, vocab_size, encoder = prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
     model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
-    trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=500)
+    trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
     print("Training...")
     trainer.train()
     print("Saving model to ./output")
