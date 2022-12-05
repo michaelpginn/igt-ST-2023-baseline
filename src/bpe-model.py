@@ -186,15 +186,15 @@ def create_trainer(model, dataset, tokenizer: BartTokenizer, batch_size=16, lr=2
             preds = preds[0]
 
         # Decode predicted output
-        decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)
+        decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True, clean_up_tokenization_spaces=False)
 
         # Decode (gold) labels
         labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
-        decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
+        decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True, clean_up_tokenization_spaces=False)
 
         decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
 
-        bleu = bleu_score(decoded_preds, [[seq] for seq in decoded_labels])
+        bleu = bleu_score(decoded_preds, decoded_labels)
 
         # Also get accuracy, based on (correct morphemes in output) / (len of correct output)
         correct_glosses = 0
