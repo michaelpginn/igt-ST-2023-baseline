@@ -9,14 +9,16 @@ import sys
 def preprocess(encoder, words, translation):
     """Preprocesses input for prediction
     """
+    words = words.lower().split()
+    translation = translation.lower().split()
 
-    SEP_ID = encoder.all_vocab.all_vocabecial_chars.index("[SEP]")
+    SEP_ID = encoder.all_vocab.index("[SEP]")
 
     source_enc = encoder.encode(words)
     transl_enc = encoder.encode(translation, vocab='transl')
     combined_enc = source_enc + [SEP_ID] + transl_enc
 
-    return torch.tensor(combined_enc)
+    return torch.tensor(combined_enc).unsqueeze(0)
 
 
 def preprocess_bpe(tokenizer, words, translation):
@@ -36,6 +38,7 @@ def main():
         # Eval mode
         is_eval = True
     else:
+        is_eval = False
         words = sys.argv[2]
         translation = sys.argv[3]
 
@@ -49,7 +52,11 @@ def main():
         if is_eval:
             print(trainer.evaluate())
         else:
-            print(model.generate(preprocess(encoder, words.split(), translation.split())))
+            print(f"Predicting glosses for\nTranscription: {words}\nTranslation: {translation}")
+            encoded = preprocess(encoder, words, translation)
+            print("Input:", encoded)
+            labels = model.generate(encoded, num_beams=5, min_length=0, max_new_tokens=100)
+            print(encoder.batch_decode(labels))
     elif model_type == 'char':
         dataset, vocab_size, encoder = char_model.prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
         model = BartForConditionalGeneration.from_pretrained(path)
@@ -57,7 +64,11 @@ def main():
         if is_eval:
             print(trainer.evaluate())
         else:
-            print(model.generate(preprocess(encoder, words.split(), translation.split())))
+            print(f"Predicting glosses for\nTranscription: {words}\nTranslation: {translation}")
+            encoded = preprocess(encoder, words, translation)
+            print("Input:", encoded)
+            labels = model.generate(encoded, num_beams=5, min_length=0, max_new_tokens=100)
+            print(encoder.batch_decode(labels))
     elif model_type == 'bpe':
         dataset, vocab_size, tokenizer = bpe_model.prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
         model = BartForConditionalGeneration.from_pretrained(path)
@@ -65,7 +76,11 @@ def main():
         if is_eval:
             print(trainer.evaluate())
         else:
-            print(model.generate(preprocess(tokenizer, words, translation)))
+            print(f"Predicting glosses for\nTranscription: {words}\nTranslation: {translation}")
+            encoded = preprocess_bpe(tokenizer, words, translation)
+            print("Input:", encoded)
+            labels = model.generate(encoded, num_beams=5, min_length=0, max_new_tokens=100)
+            print(tokenizer.batch_decode(labels))
 
 
 if __name__ == "__main__":
