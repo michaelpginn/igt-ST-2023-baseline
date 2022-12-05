@@ -55,8 +55,6 @@ def load_preprocess_data(path):
                missing_translation_count += 1
             elif str(v) == 'glosses':
                 missing_gloss_count += 1
-            elif str(v) == 'alignments':
-                missing_aligments_count += 1
 
     print(f"Parsed corpus, with \n\t{all_good_count} good rows\n\t{missing_words_count} rows missing words\
             \n\t{missing_translation_count} missing translations\n\t{missing_gloss_count} missing glosses")
