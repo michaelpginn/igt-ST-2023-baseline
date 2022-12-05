@@ -200,8 +200,8 @@ def create_trainer(model, dataset, tokenizer: BartTokenizer, batch_size=16, lr=2
         correct_glosses = 0
         total_glosses = 0
 
-        for (pred, labels) in zip(decoded_preds, decoded_labels):
-            correct_glosses += len([gloss for gloss in labels if gloss in pred ])
+        for (pred, labels) in zip(decoded_preds, decoded_labels[0]):
+            correct_glosses += len([ gloss for gloss in labels if gloss in pred ])
             total_glosses += len(labels)
 
         acc = round(correct_glosses / total_glosses, 4)
