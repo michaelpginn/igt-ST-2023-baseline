@@ -136,7 +136,7 @@ def prepare_data(paths: List[str], model_input_length: int):
     tokenizer = ByteLevelBPETokenizer()
     tokenizer.train(files=['./all_text.txt'], min_frequency=2, special_tokens=special_chars)
     tokenizer.save_model(".", "tokenizer")
-    tokenizer = BartTokenizer('./kor-vocab.json', './kor-merges.txt', bos_token="[BOS]", eos_token="[EOS]",
+    tokenizer = BartTokenizer('./tokenizer-vocab.json', './tokenizer-merges.txt', bos_token="[BOS]", eos_token="[EOS]",
                               sep_token="[SEP]", cls_token="[BOS]", unk_token="[UNK]", pad_token="[PAD]",
                               mask_token="[MASK]", model_max_length=model_input_length)
     
