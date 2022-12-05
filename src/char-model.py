@@ -269,6 +269,7 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
         learning_rate=lr,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
+        gradient_accumulation_steps=4,
         weight_decay=0.01,
         save_strategy="epoch",
         save_total_limit=3,
@@ -293,7 +294,7 @@ def main():
     model_input_length = 512
     dataset, vocab_size, encoder = prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
     model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
-    trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
+    trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=500)
     print("Training...")
     trainer.train()
     print("Saving model to ./output")

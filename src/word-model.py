@@ -194,10 +194,12 @@ def convert_to_dataset(encoder, train, dev, test, model_input_length):
     return dataset
 
 
-def prepare_data(path: str, model_input_length: int):
+def prepare_data(paths: List[str], model_input_length: int):
     """Master function to load and prepare the data as a Dataset"""
     print("Loading data...")
-    corpus_data = load_preprocess_data(path)
+    corpus_data = []
+    for path in paths:
+        corpus_data += load_preprocess_data(path)
     
     print("Creating vocabulary...")
     source_vocab = create_vocab([item['words'] for item in corpus_data])
@@ -270,6 +272,7 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
         learning_rate=lr,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
+        gradient_accumulation_steps=3,
         weight_decay=0.01,
         save_strategy="epoch",
         save_total_limit=3,
@@ -292,7 +295,7 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
 # Actual script
 def main():
     model_input_length = 512
-    dataset, vocab_size, encoder = prepare_data(path='../data/kor.xml', model_input_length=model_input_length)
+    dataset, vocab_size, encoder = prepare_data(path=['../data/kor.xml'], model_input_length=model_input_length)
     model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
     trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
     print("Training...")
