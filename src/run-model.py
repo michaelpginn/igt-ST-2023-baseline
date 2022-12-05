@@ -47,7 +47,7 @@ def main():
         trainer = word_model.create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
 
         if is_eval:
-            trainer.evaluate()
+            return trainer.evaluate()
         else:
             print(model.generate(preprocess(encoder, words.split(), translation.split())))
     elif model_type == 'char':
@@ -55,7 +55,7 @@ def main():
         model = BartForConditionalGeneration.from_pretrained(path)
         trainer = char_model.create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
         if is_eval:
-            trainer.evaluate()
+            return trainer.evaluate()
         else:
             print(model.generate(preprocess(encoder, words.split(), translation.split())))
     elif model_type == 'bpe':
@@ -63,7 +63,7 @@ def main():
         model = BartForConditionalGeneration.from_pretrained(path)
         trainer = bpe_model.create_trainer(model, dataset, tokenizer, batch_size=16, lr=2e-5, max_epochs=20)
         if is_eval:
-            trainer.evaluate()
+            return trainer.evaluate()
         else:
             print(model.generate(preprocess(tokenizer, words, translation)))
 
