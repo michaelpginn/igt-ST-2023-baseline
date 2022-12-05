@@ -150,7 +150,7 @@ def convert_to_dataset(encoder, train, dev, test, model_input_length):
     raw_dataset['train'] = Dataset.from_list(train)
     raw_dataset['validation'] = Dataset.from_list(dev)
     raw_dataset['test'] = Dataset.from_list(test)
-    
+
     def preprocess(row):
         """Preprocesses each row in the dataset
         1. Combines the source and translation into a single list, and encodes
@@ -179,9 +179,9 @@ def convert_to_dataset(encoder, train, dev, test, model_input_length):
         output_enc += [PAD_ID] * (model_input_length - len(output_enc))
         decoder_input_ids += [PAD_ID] * (model_input_length - len(decoder_input_ids))
 
-        return {'input_ids': torch.tensor(combined_enc).to(device), 
-                'attention_mask': torch.tensor(attention_mask).to(device), 
-                'labels': torch.tensor(output_enc).to(device), 
+        return {'input_ids': torch.tensor(combined_enc).to(device),
+                'attention_mask': torch.tensor(attention_mask).to(device),
+                'labels': torch.tensor(output_enc).to(device),
                 'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
     
     dataset = DatasetDict()
@@ -293,7 +293,7 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
 # Actual script
 def main():
     model_input_length = 512
-    dataset, vocab_size, encoder = prepare_data(path=['../data/kor.xml'], model_input_length=model_input_length)
+    dataset, vocab_size, encoder = prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
     model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
     trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
     print("Training...")
