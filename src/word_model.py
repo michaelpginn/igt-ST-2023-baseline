@@ -159,7 +159,8 @@ def convert_to_dataset(encoder, train, dev, test, model_input_length):
         """
         source_enc = encoder.encode(row['words'])
         transl_enc = encoder.encode(row['translation'], vocab='transl')
-        combined_enc = source_enc + [SEP_ID] + transl_enc
+#        combined_enc = source_enc + [SEP_ID] + transl_enc
+        combined_enc = source_enc
 
         # Pad
         initial_length = len(combined_enc)
