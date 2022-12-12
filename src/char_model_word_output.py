@@ -132,7 +132,7 @@ class IntegerEncoder():
     def encode(self, sentence: List[str], is_gloss=False) -> List[int]:
         """Encodes a sentence (a list of strings)"""
         if is_gloss:
-            return [self.encode_word(word) for word in sentence]
+            return [self.encode_word(word, is_gloss=True) for word in sentence]
 
         all_chars = []
         for word in sentence:
@@ -191,6 +191,7 @@ def convert_to_dataset(encoder, train, dev, test, model_input_length):
 
         # Encode the output
         output_enc = encoder.encode(row['glosses'], is_gloss=True)
+        print(output_enc)
         output_enc = output_enc + [EOS_ID]
 
         # Shift one position right

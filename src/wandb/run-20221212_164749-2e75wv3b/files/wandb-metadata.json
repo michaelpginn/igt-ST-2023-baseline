@@ -1,0 +1,34 @@
+{
+    "os": "macOS-13.0.1-arm64-arm-64bit",
+    "python": "3.10.6",
+    "heartbeatAt": "2022-12-12T22:47:50.129837",
+    "startedAt": "2022-12-12T22:47:49.572874",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/milesper/Documents/School/CSCI 5922 - Neural Networks/Final/Automatic-IGT-Glossing/src/char_model_word_output.py",
+    "codePath": "src/char_model_word_output.py",
+    "git": {
+        "remote": "https://github.com/michaelpginn/Automatic-IGT-Glossing.git",
+        "commit": "5ba24d37958ab780c74e1fea0983317b34e6d97c"
+    },
+    "email": "milespergallon271@gmail.com",
+    "root": "/Users/milesper/Documents/School/CSCI 5922 - Neural Networks/Final/Automatic-IGT-Glossing",
+    "host": "Michaels-MBP-86.lan",
+    "username": "milesper",
+    "executable": "/Users/milesper/miniforge3/bin/python3",
+    "cpu_count": 10,
+    "cpu_count_logical": 10,
+    "disk": {
+        "total": 926.3517189025879,
+        "used": 438.1322593688965
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 32.0
+    }
+}
