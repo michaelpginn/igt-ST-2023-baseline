@@ -6,6 +6,7 @@ from datasets import Dataset, DatasetDict
 from transformers import BartConfig, BartForConditionalGeneration, Seq2SeqTrainingArguments, Seq2SeqTrainer
 from torchtext.data.metrics import bleu_score
 import numpy as np
+import wandb
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -297,6 +298,7 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
         predict_with_generate=True,
         load_best_model_at_end=True,
         # fp16=True,
+        report_to="wandb",
     )
     
     trainer = Seq2SeqTrainer(
@@ -311,6 +313,7 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
     
 # Actual script
 def main():
+    wandb.init(project="igt-generation", entity="michael-ginn")
     model_input_length = 512
     dataset, vocab_size, encoder = prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
     model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
