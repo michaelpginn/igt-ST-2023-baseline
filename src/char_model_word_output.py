@@ -104,7 +104,7 @@ SPACE_ID = special_chars.index(" ")
 class IntegerEncoder():
     """Encodes and decodes chars to an integer representation"""
     def __init__(self, chars, glosses):
-        self.chars = specialchars + chars
+        self.chars = special_chars + chars
         self.glosses = glosses
         self.all_vocab = chars + glosses
 
