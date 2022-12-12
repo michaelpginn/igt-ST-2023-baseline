@@ -91,7 +91,7 @@ def create_vocab(sentences: List[List[str]], gloss_sentences: List[List[str]]):
 
     all_glosses_list = []
     for gloss, count in all_glosses.items():
-        if count >= threshold:
+        if count >= 2:
             all_glosses_list.append(gloss)
 
     return sorted(list(all_chars)), sorted(all_glosses_list)
