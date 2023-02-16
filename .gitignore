@@ -220,3 +220,4 @@ tokenizer-merges.txt
 tokenizer-vocab.json
 training-checkpoints/
 all_text.txt
+wandb/
