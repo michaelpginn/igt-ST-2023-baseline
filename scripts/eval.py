@@ -1,7 +1,7 @@
 """Contains the evaluation scripts for comparing predicted and gold IGT"""
 
 from model import IGTLine, load_data_file
-import evaluate
+from torchtext.data.metrics import bleu_score
 import click
 
 
@@ -77,7 +77,9 @@ def evaluate_igt(pred: str, gold: str):
 
     class_eval = eval_stems_grams(pred_morphemes, gold_morphemes)
 
-    all_eval = {'word_level': word_eval, 'morpheme_level': morpheme_eval, 'classes': class_eval}
+    bleu = bleu_score(pred_morphemes, [[line] for line in gold_morphemes])
+
+    all_eval = {'word_level': word_eval, 'morpheme_level': morpheme_eval, 'classes': class_eval, 'bleu': bleu}
     print(all_eval)
 
 
