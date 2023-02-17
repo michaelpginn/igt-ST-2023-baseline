@@ -6,6 +6,7 @@ from datasets import Dataset, DatasetDict
 from transformers import BartConfig, BartForConditionalGeneration, Seq2SeqTrainingArguments, Seq2SeqTrainer
 from torchtext.data.metrics import bleu_score
 import numpy as np
+import wandb
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -75,52 +76,69 @@ def load_preprocess_data(path):
         
     return corpus_data
 
-def create_vocab(sentences: List[List[str]], threshold=2):
-    """Creates a set of the unique words in a list of sentences, only including words that exceed the threshold"""
-    all_words = dict()
+def create_vocab(sentences: List[List[str]], gloss_sentences: List[List[str]]):
+    """Creates a set of the unique characters in a list of sentences"""
+    all_chars = set()
     for sentence in sentences:
         for word in sentence:
-            all_words[word.lower()] = all_words.get(word.lower(), 0) + 1
+            for letter in word:
+                all_chars.add(letter)
 
-    all_words_list = []
-    for word, count in all_words.items():
-        if count >= threshold:
-            all_words_list.append(word)
+    all_glosses = dict()
+    for sentence in gloss_sentences:
+        for gloss in sentence:
+            all_glosses[gloss.lower()] = all_glosses.get(gloss.lower(), 0) + 1
 
-    return sorted(all_words_list)
+    all_glosses_list = []
+    for gloss, count in all_glosses.items():
+        if count >= 2:
+            all_glosses_list.append(gloss)
+
+    return sorted(list(all_chars)), sorted(all_glosses_list)
 
 
-special_chars = ["[UNK]", "[SEP]", "[PAD]", "[MASK]", "[BOS]", "[EOS]"]
+special_chars = ["[UNK]", "[SEP]", "[PAD]", "[MASK]", "[BOS]", "[EOS]", " "]
+
+SPACE_ID = special_chars.index(" ")
 
 class IntegerEncoder():
-    """Encodes and decodes words to an integer representation"""
-    def __init__(self, source_vocab, target_and_gloss_vocab):
-        self.source_vocab = source_vocab
-        self.target_and_gloss_vocab = target_and_gloss_vocab
-        self.all_vocab = special_chars + source_vocab + target_and_gloss_vocab
+    """Encodes and decodes chars to an integer representation"""
+    def __init__(self, chars, glosses):
+        self.chars = special_chars + chars
+        self.glosses = glosses
+        self.all_vocab = chars + glosses
 
     
-    def encode_word(self, word, vocab='source'):
-        """Converts a word to the integer encoding"""
+    def encode_word(self, word, is_gloss=False):
+        """Converts a word to the integer encoding of its chars"""
         word = word.lower()
 
         if word in special_chars:
-            return special_chars.index(word)
-        if vocab == 'source':
-            if word in self.source_vocab:
-                return self.source_vocab.index(word) + len(special_chars)
+            return [special_chars.index(word)]
+
+        if is_gloss and word in self.glosses:
+            return self.glosses.index(word)
+        elif is_gloss:
+            return 0
+
+        chars = []
+        for char in word:
+            if char in self.chars:
+                chars.append(self.chars.index(char))
             else:
-                return 0
-        else:
-            if word in self.target_and_gloss_vocab:
-                return self.target_and_gloss_vocab.index(word) + len(special_chars) + len(self.source_vocab)
-            else:
-                return 0
+                chars.append(0)
+        return chars
             
-    def encode(self, sentence: List[str], vocab='source') -> List[int]:
+    def encode(self, sentence: List[str], is_gloss=False) -> List[int]:
         """Encodes a sentence (a list of strings)"""
-        return [self.encode_word(word, vocab=vocab) for word in sentence]
-    
+        if is_gloss:
+            return [self.encode_word(word, is_gloss=True) for word in sentence]
+
+        all_chars = []
+        for word in sentence:
+            all_chars += (self.encode_word(word) + [SPACE_ID])
+        return all_chars
+
 
     def batch_decode(self, batch):
         """Decodes a batch of indices to the actual words"""
@@ -150,7 +168,7 @@ def convert_to_dataset(encoder, train, dev, test, model_input_length):
     raw_dataset['train'] = Dataset.from_list(train)
     raw_dataset['validation'] = Dataset.from_list(dev)
     raw_dataset['test'] = Dataset.from_list(test)
-
+    
     def preprocess(row):
         """Preprocesses each row in the dataset
         1. Combines the source and translation into a single list, and encodes
@@ -158,19 +176,22 @@ def convert_to_dataset(encoder, train, dev, test, model_input_length):
         3. Creates attention mask
         """
         source_enc = encoder.encode(row['words'])
-        transl_enc = encoder.encode(row['translation'], vocab='transl')
-#        combined_enc = source_enc + [SEP_ID] + transl_enc
-        combined_enc = source_enc
+        transl_enc = encoder.encode(row['translation'])
+        combined_enc = source_enc + [SEP_ID] + transl_enc
 
         # Pad
         initial_length = len(combined_enc)
-        combined_enc += [PAD_ID] * (model_input_length - initial_length)
+        if initial_length > model_input_length:
+            combined_enc = combined_enc[:model_input_length]
+        else:
+            combined_enc += [PAD_ID] * (model_input_length - initial_length)
 
         # Create attention mask
         attention_mask = [1] * initial_length + [0] * (model_input_length - initial_length)
 
         # Encode the output
-        output_enc = encoder.encode(row['glosses'], vocab='transl')
+        output_enc = encoder.encode(row['glosses'], is_gloss=True)
+        print(output_enc)
         output_enc = output_enc + [EOS_ID]
 
         # Shift one position right
@@ -180,9 +201,9 @@ def convert_to_dataset(encoder, train, dev, test, model_input_length):
         output_enc += [PAD_ID] * (model_input_length - len(output_enc))
         decoder_input_ids += [PAD_ID] * (model_input_length - len(decoder_input_ids))
 
-        return {'input_ids': torch.tensor(combined_enc).to(device),
-                'attention_mask': torch.tensor(attention_mask).to(device),
-                'labels': torch.tensor(output_enc).to(device),
+        return {'input_ids': torch.tensor(combined_enc).to(device), 
+                'attention_mask': torch.tensor(attention_mask).to(device), 
+                'labels': torch.tensor(output_enc).to(device), 
                 'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
     
     dataset = DatasetDict()
@@ -201,10 +222,9 @@ def prepare_data(paths: List[str], model_input_length: int):
         corpus_data += load_preprocess_data(path)
     
     print("Creating vocabulary...")
-    source_vocab = create_vocab([item['words'] for item in corpus_data])
-    target_and_gloss_vocab = create_vocab([item['translation'] for item in corpus_data] + [item['glosses'] for item in corpus_data])
-    
-    encoder = IntegerEncoder(source_vocab, target_and_gloss_vocab)
+    all_chars, gloss_vocab = create_vocab([item['words'] for item in corpus_data] + [item['translation'] for item in corpus_data], [item['glosses'] for item in corpus_data])
+
+    encoder = IntegerEncoder(all_chars, gloss_vocab)
     
     train, test = train_test_split(corpus_data, test_size=0.3)
     test, dev = train_test_split(test, test_size=0.5)
@@ -221,7 +241,7 @@ def prepare_data(paths: List[str], model_input_length: int):
         
     
 def create_model(vocab_size, sequence_length=512):
-    print("Creating model...")
+    print("Creating model.py...")
     config = BartConfig(
         vocab_size=vocab_size,
         max_position_embeddings=512,
@@ -266,12 +286,12 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
         return {'bleu': bleu, 'accuracy': acc}
     
     args = Seq2SeqTrainingArguments(
-        f"training-checkpoints",
+        f"../training-checkpoints",
         evaluation_strategy="epoch",
         learning_rate=lr,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        gradient_accumulation_steps=3,
+        gradient_accumulation_steps=4,
         weight_decay=0.01,
         save_strategy="epoch",
         save_total_limit=3,
@@ -279,6 +299,7 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
         predict_with_generate=True,
         load_best_model_at_end=True,
         # fp16=True,
+        report_to="wandb",
     )
     
     trainer = Seq2SeqTrainer(
@@ -293,13 +314,14 @@ def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e
     
 # Actual script
 def main():
+    wandb.init(project="igt-generation", entity="michael-ginn")
     model_input_length = 512
     dataset, vocab_size, encoder = prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
     model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
     trainer = create_trainer(model, dataset, encoder, batch_size=4, lr=2e-5, max_epochs=200)
     print("Training...")
     trainer.train()
-    print("Saving model to ./output")
+    print("Saving model.py to ./output")
     trainer.save_model('./output')
     print("Model saved at ./output")
 

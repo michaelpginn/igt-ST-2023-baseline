@@ -1,10 +1,9 @@
-from tokenizers.implementations import ByteLevelBPETokenizer
 from xigt.codecs import xigtxml
 from typing import List
 from sklearn.model_selection import train_test_split
 import torch
 from datasets import Dataset, DatasetDict
-from transformers import BartConfig, BartForConditionalGeneration, Seq2SeqTrainingArguments, Seq2SeqTrainer, BartTokenizer, DataCollatorForSeq2Seq
+from transformers import BartConfig, BartForConditionalGeneration, Seq2SeqTrainingArguments, Seq2SeqTrainer
 from torchtext.data.metrics import bleu_score
 import numpy as np
 
@@ -76,10 +75,73 @@ def load_preprocess_data(path):
         
     return corpus_data
 
+def create_vocab(sentences: List[List[str]]):
+    """Creates a set of the unique characters in a list of sentences"""
+    all_chars = set()
+    for sentence in sentences:
+        for word in sentence:
+            for letter in word:
+                all_chars.add(letter)
 
-special_chars = ["[UNK]", "[SEP]", "[PAD]", "[MASK]", "[BOS]", "[EOS]"]
+    return sorted(list(all_chars))
 
-def convert_to_dataset(tokenizer, train, dev, test, model_input_length):
+
+special_chars = ["[UNK]", "[SEP]", "[PAD]", "[MASK]", "[BOS]", "[EOS]", " "]
+
+SPACE_ID = special_chars.index(" ")
+
+class IntegerEncoder():
+    """Encodes and decodes chars to an integer representation"""
+    def __init__(self, chars):
+        self.chars = specialchars + chars
+        self.all_vocab = chars
+
+    
+    def encode_word(self, word):
+        """Converts a word to the integer encoding of its chars"""
+        word = word.lower()
+
+        if word in special_chars:
+            return [special_chars.index(word)]
+
+        chars = []
+        for char in word:
+            if char in self.chars:
+                chars.append(self.chars.index(char))
+            else:
+                chars.append(0)
+        return chars
+            
+    def encode(self, sentence: List[str]) -> List[int]:
+        """Encodes a sentence (a list of strings)"""
+        all_chars = []
+        for word in sentence:
+            all_chars += (self.encode_word(word) + [SPACE_ID])
+        return all_chars
+
+
+    def batch_decode(self, batch):
+        """Decodes a batch of indices to the actual words"""
+        def decode(seq):
+            if isinstance(seq, torch.Tensor):
+                indices = seq.detach().cpu().tolist()
+            else:
+                indices = seq.tolist()
+            return [self.chars[index] for index in indices if index >= len(special_chars)]
+
+        return ["".join(decode(seq)).split() for seq in batch]
+    
+    def vocab_size(self):
+        return len(self.chars)
+
+
+PAD_ID = special_chars.index("[PAD]")
+SEP_ID = special_chars.index("[SEP]")
+BOS_ID = special_chars.index("[BOS]")
+EOS_ID = special_chars.index("[EOS]")
+
+
+def convert_to_dataset(encoder, train, dev, test, model_input_length):
     """Converts raw lists of data into a Dataset of encoded indices"""
 
     raw_dataset = DatasetDict()
@@ -93,19 +155,35 @@ def convert_to_dataset(tokenizer, train, dev, test, model_input_length):
         2. Pads the combined input and output sequences
         3. Creates attention mask
         """
-        source_enc = tokenizer.encode(row['words'], is_split_into_words=True, add_special_tokens=False)
-        transl_enc = tokenizer.encode(row['translation'], is_split_into_words=True, add_special_tokens=False)
-        combined_enc = source_enc + [tokenizer.sep_token_id] + transl_enc
+        source_enc = encoder.encode(row['words'])
+        transl_enc = encoder.encode(row['translation'])
+        combined_enc = source_enc + [SEP_ID] + transl_enc
 
-        attention_mask = [1] * len(combined_enc)
+        # Pad
+        initial_length = len(combined_enc)
+        if initial_length > model_input_length:
+            combined_enc = combined_enc[:model_input_length]
+        else:
+            combined_enc += [PAD_ID] * (model_input_length - initial_length)
+
+        # Create attention mask
+        attention_mask = [1] * initial_length + [0] * (model_input_length - initial_length)
 
         # Encode the output
-        output_enc = tokenizer.encode(row['glosses'], is_split_into_words=True, add_special_tokens=False)
-        output_enc = [tokenizer.bos_token_id] + output_enc + [tokenizer.eos_token_id]
+        output_enc = encoder.encode(row['glosses'])
+        output_enc = output_enc + [EOS_ID]
+
+        # Shift one position right
+        decoder_input_ids = [BOS_ID] + output_enc
+
+        # Pad both
+        output_enc += [PAD_ID] * (model_input_length - len(output_enc))
+        decoder_input_ids += [PAD_ID] * (model_input_length - len(decoder_input_ids))
 
         return {'input_ids': torch.tensor(combined_enc).to(device), 
                 'attention_mask': torch.tensor(attention_mask).to(device), 
-                'labels': torch.tensor(output_enc).to(device)}
+                'labels': torch.tensor(output_enc).to(device), 
+                'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
     
     dataset = DatasetDict()
     dataset['train'] = raw_dataset['train'].map(preprocess)
@@ -122,23 +200,10 @@ def prepare_data(paths: List[str], model_input_length: int):
     for path in paths:
         corpus_data += load_preprocess_data(path)
     
-    print("Creating tokenizer...")
+    print("Creating vocabulary...")
+    all_chars = create_vocab([item['words'] for item in corpus_data] + [item['translation'] for item in corpus_data] + [item['glosses'] for item in corpus_data])
 
-    all_text = open('all_text.txt', 'w')
-    all_text.write('')
-    all_text.close()
-    all_text = open('all_text.txt', 'a')
-    for item in corpus_data:
-        all_text.write(" ".join(item['words']))
-        all_text.write(" ".join(item['translation']))
-        all_text.write(" ".join(item['glosses']))
-
-    tokenizer = ByteLevelBPETokenizer()
-    tokenizer.train(files=['./all_text.txt'], min_frequency=2, special_tokens=special_chars)
-    tokenizer.save_model(".", "tokenizer")
-    tokenizer = BartTokenizer('./tokenizer-vocab.json', './tokenizer-merges.txt', bos_token="[BOS]", eos_token="[EOS]",
-                              sep_token="[SEP]", cls_token="[BOS]", unk_token="[UNK]", pad_token="[PAD]",
-                              mask_token="[MASK]", model_max_length=model_input_length)
+    encoder = IntegerEncoder(all_chars)
     
     train, test = train_test_split(corpus_data, test_size=0.3)
     test, dev = train_test_split(test, test_size=0.5)
@@ -148,73 +213,64 @@ def prepare_data(paths: List[str], model_input_length: int):
     print(f"Test: {len(test)}")
     
     print("Creating dataset...")
-    dataset = convert_to_dataset(tokenizer, train, dev, test, model_input_length)
-    vocab_size = tokenizer.vocab_size
+    dataset = convert_to_dataset(encoder, train, dev, test, model_input_length)
+    vocab_size = encoder.vocab_size()
     
-    return dataset, vocab_size, tokenizer
+    return dataset, vocab_size, encoder
         
     
-def create_model(vocab_size, tokenizer: BartTokenizer, sequence_length=512):
-    print("Creating model...")
+def create_model(vocab_size, sequence_length=512):
+    print("Creating model.py...")
     config = BartConfig(
         vocab_size=vocab_size,
-        max_position_embeddings=sequence_length,
-        pad_token_id=tokenizer.pad_token_id,
-        bos_token_id=tokenizer.bos_token_id,
-        eos_token_id=tokenizer.eos_token_id,
-        decoder_start_token_id=tokenizer.bos_token_id,
-        forced_eos_token_id=tokenizer.eos_token_id,
-        num_beams=5
+        max_position_embeddings=512,
+        pad_token_id=PAD_ID,
+        bos_token_id=BOS_ID,
+        eos_token_id=EOS_ID,
+        decoder_start_token_id=BOS_ID,
+        forced_eos_token_id=EOS_ID,
+        num_beams = 5
     )
     model = BartForConditionalGeneration(config)
     print(model.config)
     return model.to(device)
     
     
-def create_trainer(model, dataset, tokenizer: BartTokenizer, batch_size=16, lr=2e-5, max_epochs=20):
+def create_trainer(model, dataset, encoder: IntegerEncoder, batch_size=16, lr=2e-5, max_epochs=20):
     print("Creating trainer...")
-
-    def postprocess_text(preds, labels):
-        preds = [pred.strip().split() for pred in preds]
-        labels = [[label.strip().split()] for label in labels]
-
-        return preds, labels
-
     def compute_metrics(eval_preds):
         preds, labels = eval_preds
         if isinstance(preds, tuple):
             preds = preds[0]
 
         # Decode predicted output
-        decoded_preds = tokenizer.batch_decode(preds, skip_special_tokens=True, clean_up_tokenization_spaces=False)
+        decoded_preds = encoder.batch_decode(preds)
 
         # Decode (gold) labels
-        labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
-        decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True, clean_up_tokenization_spaces=False)
+        labels = np.where(labels != -100, labels, PAD_ID)
+        decoded_labels = encoder.batch_decode(labels)
 
-        decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
-
-        bleu = bleu_score(decoded_preds, decoded_labels)
+        bleu = bleu_score(decoded_preds, [[seq] for seq in decoded_labels])
 
         # Also get accuracy, based on (correct morphemes in output) / (len of correct output)
         correct_glosses = 0
         total_glosses = 0
 
         for (pred, labels) in zip(decoded_preds, decoded_labels):
-            correct_glosses += len([ gloss for gloss in labels[0] if gloss in pred ])
-            total_glosses += len(labels[0])
+            correct_glosses += len([gloss for gloss in labels if gloss in pred ])
+            total_glosses += len(labels)
 
         acc = round(correct_glosses / total_glosses, 4)
 
         return {'bleu': bleu, 'accuracy': acc}
     
     args = Seq2SeqTrainingArguments(
-        f"training-checkpoints",
+        f"../training-checkpoints",
         evaluation_strategy="epoch",
         learning_rate=lr,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        gradient_accumulation_steps=3,
+        gradient_accumulation_steps=4,
         weight_decay=0.01,
         save_strategy="epoch",
         save_total_limit=3,
@@ -229,7 +285,6 @@ def create_trainer(model, dataset, tokenizer: BartTokenizer, batch_size=16, lr=2
         args,
         train_dataset=dataset["train"],
         eval_dataset=dataset["validation"],
-        data_collator=DataCollatorForSeq2Seq(tokenizer, model=model),
         compute_metrics=compute_metrics
     )
     return trainer
@@ -238,12 +293,12 @@ def create_trainer(model, dataset, tokenizer: BartTokenizer, batch_size=16, lr=2
 # Actual script
 def main():
     model_input_length = 512
-    dataset, vocab_size, tokenizer = prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
-    model = create_model(vocab_size=vocab_size, tokenizer=tokenizer, sequence_length=model_input_length)
-    trainer = create_trainer(model, dataset, tokenizer, batch_size=16, lr=2e-5, max_epochs=20)
+    dataset, vocab_size, encoder = prepare_data(paths=['../data/kor.xml'], model_input_length=model_input_length)
+    model = create_model(vocab_size=vocab_size, sequence_length=model_input_length)
+    trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=20)
     print("Training...")
     trainer.train()
-    print("Saving model to ./output")
+    print("Saving model.py to ./output")
     trainer.save_model('./output')
     print("Model saved at ./output")
 

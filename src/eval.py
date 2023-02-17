@@ -1,6 +1,6 @@
 """Contains the evaluation scripts for comparing predicted and gold IGT"""
 
-from model import IGTLine, load_data_file
+from data import IGTLine, load_data_file
 from torchtext.data.metrics import bleu_score
 import click
 
@@ -58,6 +58,14 @@ def eval_stems_grams(pred: list[list[str]], gold: list[list[str]]) -> dict:
     return {'stem': stem_perf, 'gram': gram_perf}
 
 
+def eval_morpheme_glosses(pred_morphemes: list[list[str]], gold_morphemes: list[list[str]]):
+    """Evaluates the performance at the morpheme level"""
+    morpheme_eval = eval_accuracy(pred_morphemes, gold_morphemes)
+    class_eval = eval_stems_grams(pred_morphemes, gold_morphemes)
+    bleu = bleu_score(pred_morphemes, [[line] for line in gold_morphemes])
+    return {'morpheme_level': morpheme_eval, 'classes': class_eval, 'bleu': bleu}
+
+
 @click.command()
 @click.option("--pred", help="File containing predicted IGT", type=click.Path(exists=True), required=True)
 @click.option("--gold", help="File containing gold-standard IGT", type=click.Path(exists=True), required=True)
@@ -73,13 +81,8 @@ def evaluate_igt(pred: str, gold: str):
 
     pred_morphemes = [line.gloss_list(segmented=True) for line in pred]
     gold_morphemes = [line.gloss_list(segmented=True) for line in gold]
-    morpheme_eval = eval_accuracy(pred_morphemes, gold_morphemes)
 
-    class_eval = eval_stems_grams(pred_morphemes, gold_morphemes)
-
-    bleu = bleu_score(pred_morphemes, [[line] for line in gold_morphemes])
-
-    all_eval = {'word_level': word_eval, 'morpheme_level': morpheme_eval, 'classes': class_eval, 'bleu': bleu}
+    all_eval = {'word_level': word_eval, **eval_morpheme_glosses(pred_morphemes=pred_morphemes, gold_morphemes=gold_morphemes)}
     print(all_eval)
 
 
