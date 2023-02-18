@@ -56,7 +56,11 @@ def eval_stems_grams(pred: List[List[str]], gold: List[List[str]]) -> dict:
     stem_perf['f1'] = 2 * (stem_perf['prec'] * stem_perf['rec']) / (stem_perf['prec'] + stem_perf['rec'])
     gram_perf = {'prec': 0 if perf['gram']['pred'] == 0 else perf['gram']['correct'] / perf['gram']['pred'],
                  'rec': perf['gram']['correct'] / perf['gram']['gold']}
-    gram_perf['f1'] = 2 * (gram_perf['prec'] * gram_perf['rec']) / (gram_perf['prec'] + gram_perf['rec'])
+
+    if (gram_perf['prec'] + gram_perf['rec']) == 0:
+        gram_perf['f1'] = 0
+    else:
+        gram_perf['f1'] = 2 * (gram_perf['prec'] * gram_perf['rec']) / (gram_perf['prec'] + gram_perf['rec'])
     return {'stem': stem_perf, 'gram': gram_perf}
 
 
