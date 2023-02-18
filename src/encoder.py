@@ -1,10 +1,11 @@
 """Defines a tokenizer that uses two distinct vocabulary"""
+from typing import List
 import torch
 
 special_chars = ["[UNK]", "[SEP]", "[PAD]", "[MASK]", "[BOS]", "[EOS]"]
 
 
-def create_vocab(sentences: list[list[str]], threshold=2):
+def create_vocab(sentences: List[List[str]], threshold=2):
     """Creates a set of the unique words in a list of sentences, only including words that exceed the threshold"""
     all_words = dict()
     for sentence in sentences:
@@ -22,7 +23,7 @@ def create_vocab(sentences: list[list[str]], threshold=2):
 class MultiVocabularyEncoder():
     """Encodes and decodes words to an integer representation"""
 
-    def __init__(self, vocabularies: list[list[str]]):
+    def __init__(self, vocabularies: List[List[str]]):
         """
         :param vocabularies: A list of vocabularies for the tokenizer
         """
@@ -47,7 +48,7 @@ class MultiVocabularyEncoder():
             # We got a bad vocabulary
             raise ValueError('VOCABULARY BAD! BOO! HISS!! GAAHH!')
 
-    def encode(self, sentence: list[str], vocabulary_index) -> list[int]:
+    def encode(self, sentence: List[str], vocabulary_index) -> List[int]:
         """Encodes a sentence (a list of strings)"""
         return [self.encode_word(word, vocabulary_index=vocabulary_index) for word in sentence]
 

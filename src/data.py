@@ -1,5 +1,5 @@
 """Defines the data model.py and a function to easily load data"""
-from typing import Optional
+from typing import Optional, List
 import re
 from datasets import Dataset, DatasetDict
 import torch
@@ -27,7 +27,7 @@ class IGTLine:
             return re.split("\s|-", self.glosses)
 
 
-def load_data_file(path: str) -> list[IGTLine]:
+def load_data_file(path: str) -> List[IGTLine]:
     """Loads a file containing IGT data into a list of entries."""
     all_data = []
 

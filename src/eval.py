@@ -1,11 +1,12 @@
 """Contains the evaluation scripts for comparing predicted and gold IGT"""
 
+from typing import List
 from data import IGTLine, load_data_file
 from torchtext.data.metrics import bleu_score
 import click
 
 
-def eval_accuracy(pred: list[list[str]], gold: list[list[str]]) -> dict:
+def eval_accuracy(pred: List[List[str]], gold: List[List[str]]) -> dict:
     """Computes the average and overall accuracy, where predicted labels must be in the correct position in the list."""
     total_correct_predictions = 0
     total_tokens = 0
@@ -31,7 +32,7 @@ def eval_accuracy(pred: list[list[str]], gold: list[list[str]]) -> dict:
     return {'average_accuracy': average_accuracy, 'accuracy': overall_accuracy}
 
 
-def eval_stems_grams(pred: list[list[str]], gold: list[list[str]]) -> dict:
+def eval_stems_grams(pred: List[List[str]], gold: List[List[str]]) -> dict:
     perf = {'stem': {'correct': 0, 'pred': 0, 'gold': 0}, 'gram': {'correct': 0, 'pred': 0, 'gold': 0}}
 
     for (entry_pred, entry_gold) in zip(pred, gold):
@@ -58,7 +59,7 @@ def eval_stems_grams(pred: list[list[str]], gold: list[list[str]]) -> dict:
     return {'stem': stem_perf, 'gram': gram_perf}
 
 
-def eval_morpheme_glosses(pred_morphemes: list[list[str]], gold_morphemes: list[list[str]]):
+def eval_morpheme_glosses(pred_morphemes: List[List[str]], gold_morphemes: List[List[str]]):
     """Evaluates the performance at the morpheme level"""
     morpheme_eval = eval_accuracy(pred_morphemes, gold_morphemes)
     class_eval = eval_stems_grams(pred_morphemes, gold_morphemes)
