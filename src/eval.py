@@ -21,7 +21,7 @@ def eval_accuracy(pred: List[List[str]], gold: List[List[str]]) -> dict:
                 entry_correct_predictions += 1
 
         if len(entry_gold) == 0:
-            print(entry_gold)
+            print("WHY ", entry_gold)
         entry_accuracy = (entry_correct_predictions / len(entry_gold))
         summed_accuracies += entry_accuracy
 
