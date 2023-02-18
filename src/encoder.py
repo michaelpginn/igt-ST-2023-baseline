@@ -50,7 +50,7 @@ class MultiVocabularyEncoder():
                 return 0
         else:
             # We got a bad vocabulary
-            raise ValueError('VOCABULARY BAD! BOO! HISS!! GAAHH!')
+            raise ValueError('Invalid vocabulary index.')
 
     def encode(self, sentence: List[str], vocabulary_index) -> List[int]:
         """Encodes a sentence (a list of strings)"""
@@ -64,7 +64,7 @@ class MultiVocabularyEncoder():
                 indices = seq.detach().cpu().tolist()
             else:
                 indices = seq.tolist()
-            return [self.all_vocab[index] for index in indices if index >= len(special_chars)]
+            return [self.all_vocab[index] for index in indices if (index >= len(special_chars) or index == 0)]
 
         return [decode(seq) for seq in batch]
 
