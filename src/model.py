@@ -10,6 +10,7 @@ from eval import eval_morpheme_glosses
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
+
 def create_model(encoder: MultiVocabularyEncoder, sequence_length):
     print("Creating model...")
     config = BartConfig(
