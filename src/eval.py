@@ -50,10 +50,10 @@ def eval_stems_grams(pred: List[List[str]], gold: List[List[str]]) -> dict:
                     # Correct prediction
                     perf[token_type]['correct'] += 1
 
-    stem_perf = {'prec': perf['stem']['correct'] / perf['stem']['pred'],
+    stem_perf = {'prec': 0 if perf['stem']['pred'] == 0 else perf['stem']['correct'] / perf['stem']['pred'],
                  'rec': perf['stem']['correct'] / perf['stem']['gold']}
     stem_perf['f1'] = 2 * (stem_perf['prec'] * stem_perf['rec']) / (stem_perf['prec'] + stem_perf['rec'])
-    gram_perf = {'prec': perf['gram']['correct'] / perf['gram']['pred'],
+    gram_perf = {'prec': 0 if perf['gram']['pred'] == 0 else perf['gram']['correct'] / perf['gram']['pred'],
                  'rec': perf['gram']['correct'] / perf['gram']['gold']}
     gram_perf['f1'] = 2 * (gram_perf['prec'] * gram_perf['rec']) / (gram_perf['prec'] + gram_perf['rec'])
     return {'stem': stem_perf, 'gram': gram_perf}
