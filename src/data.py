@@ -26,6 +26,9 @@ class IGTLine:
         else:
             return re.split("\s|-", self.glosses)
 
+    def __dict__(self):
+        return {'transcription': self.transcription, 'translation': self.translation, 'glosses': self.gloss_list(segmented=True)}
+
 
 def load_data_file(path: str) -> List[IGTLine]:
     """Loads a file containing IGT data into a list of entries."""
@@ -76,15 +79,15 @@ def prepare_dataset(train_path: str, dev_path: str, tokenizer, model_input_lengt
 
     # Create a dataset
     raw_dataset = DatasetDict()
-    raw_dataset['train'] = Dataset.from_list([{'igt': line} for line in train_data])
-    raw_dataset['dev'] = Dataset.from_list([{'igt': line} for line in dev_data])
+    raw_dataset['train'] = Dataset.from_list([line.__dict__() for line in train_data])
+    raw_dataset['dev'] = Dataset.from_list([line.__dict__() for line in dev_data])
 
     # Create an encoder for both vocabularies
     encoder = MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab])
 
     def process(row):
-        source_enc = encoder.encode(tokenizer(row['igt'].transcription), vocabulary_index=0)
-        translation_enc = encoder.encode(tokenizer(row['igt'].translation), vocabulary_index=1)
+        source_enc = encoder.encode(tokenizer(row['transcription']), vocabulary_index=0)
+        translation_enc = encoder.encode(tokenizer(row['translation']), vocabulary_index=1)
         combined_enc = source_enc + translation_enc
 
         # Pad
@@ -95,7 +98,7 @@ def prepare_dataset(train_path: str, dev_path: str, tokenizer, model_input_lengt
         attention_mask = [1] * initial_length + [0] * (model_input_length - initial_length)
 
         # Encode the output
-        output_enc = encoder.encode(row['igt'].gloss_list(segmented=True), vocabulary_index=1)
+        output_enc = encoder.encode(row['glosses'], vocabulary_index=1)
         output_enc = output_enc + [encoder.EOS_ID]
 
         # Shift one position right
