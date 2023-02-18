@@ -43,7 +43,10 @@ class MultiVocabularyEncoder():
             return special_chars.index(word)
         elif vocabulary_index < len(self.vocabularies):
             prior_vocab_padding = len(sum(self.vocabularies[:vocabulary_index], [])) # Sums the length of all preceding vocabularies
-            return self.vocabularies[vocabulary_index].index(word) + prior_vocab_padding + len(special_chars)
+            if word in self.vocabularies[vocabulary_index]:
+                return self.vocabularies[vocabulary_index].index(word) + prior_vocab_padding + len(special_chars)
+            else:
+                return 0
         else:
             # We got a bad vocabulary
             raise ValueError('VOCABULARY BAD! BOO! HISS!! GAAHH!')
