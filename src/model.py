@@ -2,6 +2,7 @@ import torch
 from transformers import BartConfig, BartForConditionalGeneration, Seq2SeqTrainingArguments, Seq2SeqTrainer
 import click
 import numpy as np
+import wandb
 from data import prepare_dataset
 from custom_tokenizers import word_tokenize
 from encoder import MultiVocabularyEncoder
@@ -60,6 +61,7 @@ def create_trainer(model: BartForConditionalGeneration, dataset, encoder: MultiV
         num_train_epochs=max_epochs,
         predict_with_generate=True,
         load_best_model_at_end=True,
+        report_to="wandb",
     )
 
     trainer = Seq2SeqTrainer(
@@ -89,6 +91,8 @@ tokenizers = {
 @click.option("--tokenizer", help="word, bpe, or char", type=str, required=True)
 @click.option("--lang", help="Which language to train", type=str, required=True)
 def main(tokenizer: str, lang: str):
+    wandb.init(project="igt-generation", entity="michael-ginn")
+
     MODEL_INPUT_LENGTH = 512
 
     train_path = f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-train-track1-uncovered"
