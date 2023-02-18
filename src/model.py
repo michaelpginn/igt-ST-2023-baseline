@@ -100,7 +100,7 @@ def main(tokenizer: str, lang: str):
                                        model_input_length=MODEL_INPUT_LENGTH,
                                        device=device)
     model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
-    trainer = create_trainer(model, dataset, encoder, batch_size=4, lr=2e-5, max_epochs=200)
+    trainer = create_trainer(model, dataset, encoder, batch_size=8, lr=2e-5, max_epochs=200)
     print("Training...")
     trainer.train()
     print("Saving model to ./output")
