@@ -73,7 +73,7 @@ def prepare_dataset(train_path: str, dev_path: str, tokenizer, model_input_lengt
     # Create the shared vocab for the translation and glosses
     translation_data = [tokenizer(line.translation) for line in train_data]
     gloss_data = [line.gloss_list(segmented=True) for line in train_data]
-    target_vocab = create_vocab(translation_data + gloss_data, threshold=1)
+    target_vocab = create_vocab(translation_data + gloss_data, threshold=threshold)
 
     dev_data = load_data_file(dev_path)
 

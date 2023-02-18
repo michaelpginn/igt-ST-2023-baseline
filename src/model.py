@@ -103,7 +103,7 @@ def main(tokenizer: str, lang: str):
                                        dev_path=dev_path,
                                        tokenizer=tokenizers[tokenizer],
                                        model_input_length=MODEL_INPUT_LENGTH,
-                                       threshold=1,
+                                       threshold=2,
                                        device=device)
     model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
     trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=100)
