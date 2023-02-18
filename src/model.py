@@ -3,7 +3,7 @@ from transformers import BartConfig, BartForConditionalGeneration, Seq2SeqTraini
 import click
 import numpy as np
 from data import prepare_dataset
-from tokenizers import word_tokenize
+from custom_tokenizers import word_tokenize
 from encoder import MultiVocabularyEncoder
 from eval import eval_morpheme_glosses
 
@@ -86,8 +86,8 @@ tokenizers = {
 }
 
 @click.command()
-@click.option("--tokenizer", help="word, bpe, or char", type=str)
-@click.option("--lang", help="Which language to train", type=str)
+@click.option("--tokenizer", help="word, bpe, or char", type=str, required=True)
+@click.option("--lang", help="Which language to train", type=str, required=True)
 def main(tokenizer: str, lang: str):
     MODEL_INPUT_LENGTH = 512
 

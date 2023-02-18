@@ -3,7 +3,7 @@ from typing import Optional
 import re
 from datasets import Dataset, DatasetDict
 import torch
-from tokenizers import word_tokenize
+from custom_tokenizers import word_tokenize
 from encoder import create_vocab, MultiVocabularyEncoder
 
 class IGTLine:
