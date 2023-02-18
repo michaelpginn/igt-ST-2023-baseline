@@ -20,8 +20,6 @@ def eval_accuracy(pred: List[List[str]], gold: List[List[str]]) -> dict:
             if token_index < len(entry_pred) and entry_pred[token_index] == entry_gold[token_index]:
                 entry_correct_predictions += 1
 
-        if len(entry_gold) == 0:
-            print("WHY ", entry_gold, i)
         entry_accuracy = (entry_correct_predictions / len(entry_gold))
         summed_accuracies += entry_accuracy
 
@@ -52,13 +50,15 @@ def eval_stems_grams(pred: List[List[str]], gold: List[List[str]]) -> dict:
                     # Correct prediction
                     perf[token_type]['correct'] += 1
 
-    print(perf)
     stem_perf = {'prec': 0 if perf['stem']['pred'] == 0 else perf['stem']['correct'] / perf['stem']['pred'],
                  'rec': perf['stem']['correct'] / perf['stem']['gold']}
-    stem_perf['f1'] = 2 * (stem_perf['prec'] * stem_perf['rec']) / (stem_perf['prec'] + stem_perf['rec'])
+    if (stem_perf['prec'] + stem_perf['rec']) == 0:
+        stem_perf['f1'] = 0
+    else:
+        stem_perf['f1'] = 2 * (stem_perf['prec'] * stem_perf['rec']) / (stem_perf['prec'] + stem_perf['rec'])
+
     gram_perf = {'prec': 0 if perf['gram']['pred'] == 0 else perf['gram']['correct'] / perf['gram']['pred'],
                  'rec': perf['gram']['correct'] / perf['gram']['gold']}
-
     if (gram_perf['prec'] + gram_perf['rec']) == 0:
         gram_perf['f1'] = 0
     else:
