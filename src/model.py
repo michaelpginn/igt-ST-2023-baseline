@@ -66,7 +66,7 @@ def create_trainer(model: BartForConditionalGeneration, dataset, encoder: MultiV
         model,
         args,
         train_dataset=dataset["train"],
-        eval_dataset=dataset["validation"],
+        eval_dataset=dataset["dev"],
         compute_metrics=compute_metrics
     )
     return trainer

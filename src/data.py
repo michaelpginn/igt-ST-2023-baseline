@@ -114,6 +114,7 @@ def prepare_dataset(train_path: str, dev_path: str, tokenizer, model_input_lengt
                 'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
 
     dataset = DatasetDict()
+    print("Preparing datasets...")
     dataset['train'] = raw_dataset['train'].map(process)
     dataset['dev'] = raw_dataset['dev'].map(process)
     return dataset, encoder
