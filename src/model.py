@@ -46,9 +46,7 @@ def create_trainer(model: BartForConditionalGeneration, dataset, encoder: MultiV
 
         # Decode (gold) labels
         labels = np.where(labels != -100, labels, encoder.PAD_ID)
-        print(labels)
         decoded_labels = encoder.batch_decode(labels)
-        print(decoded_labels)
         return eval_morpheme_glosses(pred_morphemes=decoded_preds, gold_morphemes=decoded_labels)
 
     args = Seq2SeqTrainingArguments(
@@ -105,6 +103,7 @@ def main(tokenizer: str, lang: str):
                                        dev_path=dev_path,
                                        tokenizer=tokenizers[tokenizer],
                                        model_input_length=MODEL_INPUT_LENGTH,
+                                       threshold=1,
                                        device=device)
     model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
     trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=100)
