@@ -45,6 +45,7 @@ def create_trainer(model: BartForConditionalGeneration, dataset, encoder: MultiV
         decoded_preds = encoder.batch_decode(preds)
 
         # Decode (gold) labels
+        print(labels)
         labels = np.where(labels != -100, labels, encoder.PAD_ID)
         decoded_labels = encoder.batch_decode(labels)
         return eval_morpheme_glosses(pred_morphemes=decoded_preds, gold_morphemes=decoded_labels)
