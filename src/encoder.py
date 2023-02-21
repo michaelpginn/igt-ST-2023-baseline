@@ -10,7 +10,10 @@ def create_vocab(sentences: List[List[str]], threshold=2):
     all_words = dict()
     for sentence in sentences:
         for word in sentence:
-            all_words[word.lower()] = all_words.get(word.lower(), 0) + 1
+            # Grams should stay uppercase, stems should be lowered
+            if not word.isupper():
+                word = word.lower()
+            all_words[word] = all_words.get(word, 0) + 1
 
     all_words_list = []
     for word, count in all_words.items():
