@@ -113,6 +113,7 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
         # Encode the output, if present
         if 'glosses' in row:
             if not for_token_classification:
+                # Seq to seq
                 output_enc = encoder.encode(row['glosses'], vocabulary_index=1)
                 output_enc = output_enc + [encoder.EOS_ID]
 
@@ -128,6 +129,7 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
                         'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
             else:
                 output_enc = encoder.encode(row['glosses'], vocabulary_index=2, separate_vocab=True)
+                output_enc += [encoder.PAD_ID] * (len(translation_enc) + 1)
                 output_enc += [-100] * (model_input_length - len(output_enc))
                 return {'input_ids': torch.tensor(combined_enc).to(device),
                         'attention_mask': torch.tensor(attention_mask).to(device),
