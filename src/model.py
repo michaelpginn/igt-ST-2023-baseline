@@ -129,7 +129,7 @@ def main(mode: str, tokenizer: str, lang: str, pretrained_path: str, data_path: 
         model = BartForConditionalGeneration.from_pretrained(pretrained_path)
         trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=100)
         preds = trainer.predict(test_dataset=predict_data)
-        write_predictions(data_path, preds)
+        write_predictions(data_path, preds, encoder=encoder)
 
 
 if __name__ == "__main__":
