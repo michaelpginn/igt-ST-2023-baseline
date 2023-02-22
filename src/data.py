@@ -69,7 +69,7 @@ def load_data_file(path: str) -> List[IGTLine]:
     return all_data
 
 
-def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, segmented=True):
+def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, for_token_classification=False):
     """Creates an encoder with the vocabulary contained in train_data"""
     # Create the vocab for the source language
     source_data = [tokenizer(line.transcription) for line in train_data]
@@ -77,11 +77,16 @@ def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, segment
 
     # Create the shared vocab for the translation and glosses
     translation_data = [tokenizer(line.translation) for line in train_data]
-    gloss_data = [line.gloss_list(segmented=segmented) for line in train_data]
-    target_vocab = create_vocab(translation_data + gloss_data, threshold=threshold)
+    gloss_data = [line.gloss_list(segmented=not for_token_classification) for line in train_data]
 
-    # Create an encoder for both vocabularies
-    return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab])
+    if for_token_classification:
+        target_vocab = create_vocab(translation_data, threshold=threshold)
+        gloss_vocab = create_vocab(gloss_data, threshold=threshold)
+        return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab, gloss_vocab])
+    else:
+        target_vocab = create_vocab(translation_data + gloss_data, threshold=threshold)
+        # Create an encoder for both vocabularies
+        return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab])
 
 
 def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEncoder, model_input_length: int, for_token_classification: bool, device):
@@ -107,9 +112,8 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
 
         # Encode the output, if present
         if 'glosses' in row:
-            output_enc = encoder.encode(row['glosses'], vocabulary_index=1)
-
             if not for_token_classification:
+                output_enc = encoder.encode(row['glosses'], vocabulary_index=1)
                 output_enc = output_enc + [encoder.EOS_ID]
 
                 # Shift one position right
@@ -123,6 +127,7 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
                         'labels': torch.tensor(output_enc).to(device),
                         'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
             else:
+                output_enc = encoder.encode(row['glosses'], vocabulary_index=2, separate_vocab=True)
                 output_enc += [-100] * (model_input_length - len(output_enc))
                 return {'input_ids': torch.tensor(combined_enc).to(device),
                         'attention_mask': torch.tensor(attention_mask).to(device),

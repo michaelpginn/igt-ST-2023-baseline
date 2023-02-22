@@ -17,7 +17,8 @@ def create_model(encoder: MultiVocabularyEncoder, sequence_length):
     config = RobertaConfig(
         vocab_size=encoder.vocab_size(),
         max_position_embeddings=sequence_length,
-        pad_token_id=encoder.PAD_ID
+        pad_token_id=encoder.PAD_ID,
+        num_labels=len(encoder.vocabularies[2])
     )
     model = RobertaForTokenClassification(config)
     print(model.config)

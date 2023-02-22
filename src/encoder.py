@@ -38,7 +38,7 @@ class MultiVocabularyEncoder():
         self.BOS_ID = special_chars.index("[BOS]")
         self.EOS_ID = special_chars.index("[EOS]")
 
-    def encode_word(self, word, vocabulary_index):
+    def encode_word(self, word, vocabulary_index, separate_vocab=False):
         """Converts a word to the integer encoding"""
         if not word.isupper():
             word = word.lower()
@@ -46,8 +46,11 @@ class MultiVocabularyEncoder():
         if word in special_chars:
             return special_chars.index(word)
         elif vocabulary_index < len(self.vocabularies):
-            prior_vocab_padding = len(sum(self.vocabularies[:vocabulary_index], [])) # Sums the length of all preceding vocabularies
             if word in self.vocabularies[vocabulary_index]:
+                if separate_vocab:
+                    return self.vocabularies[vocabulary_index].index(word)
+                # Otherwise we need the combined index
+                prior_vocab_padding = len(sum(self.vocabularies[:vocabulary_index], []))  # Sums the length of all preceding vocabularies
                 return self.vocabularies[vocabulary_index].index(word) + prior_vocab_padding + len(special_chars)
             else:
                 return 0
@@ -55,9 +58,9 @@ class MultiVocabularyEncoder():
             # We got a bad vocabulary
             raise ValueError('Invalid vocabulary index.')
 
-    def encode(self, sentence: List[str], vocabulary_index) -> List[int]:
+    def encode(self, sentence: List[str], vocabulary_index, separate_vocab=False) -> List[int]:
         """Encodes a sentence (a list of strings)"""
-        return [self.encode_word(word, vocabulary_index=vocabulary_index) for word in sentence]
+        return [self.encode_word(word, vocabulary_index=vocabulary_index, separate_vocab=separate_vocab) for word in sentence]
 
     def batch_decode(self, batch):
         """Decodes a batch of indices to the actual words"""
