@@ -62,10 +62,8 @@ def load_data_file(path: str) -> List[IGTLine]:
     return all_data
 
 
-def prepare_dataset(train_path: str, dev_path: str, tokenizer, model_input_length: int, threshold: int, device):
-    """Loads data, creates tokenizer, and creates a dataset object for easy manipulation"""
-    train_data = load_data_file(train_path)
-
+def create_encoder(train_data: list[IGTLine], threshold: int, tokenizer):
+    """Creates an encoder with the vocabulary contained in train_data"""
     # Create the vocab for the source language
     source_data = [tokenizer(line.transcription) for line in train_data]
     source_vocab = create_vocab(source_data, threshold=threshold)
@@ -75,15 +73,15 @@ def prepare_dataset(train_path: str, dev_path: str, tokenizer, model_input_lengt
     gloss_data = [line.gloss_list(segmented=True) for line in train_data]
     target_vocab = create_vocab(translation_data + gloss_data, threshold=threshold)
 
-    dev_data = load_data_file(dev_path)
+    # Create an encoder for both vocabularies
+    return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab])
+
+
+def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEncoder, model_input_length: int,  device):
+    """Loads data, creates tokenizer, and creates a dataset object for easy manipulation"""
 
     # Create a dataset
-    raw_dataset = DatasetDict()
-    raw_dataset['train'] = Dataset.from_list([line.__dict__() for line in train_data])
-    raw_dataset['dev'] = Dataset.from_list([line.__dict__() for line in dev_data])
-
-    # Create an encoder for both vocabularies
-    encoder = MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab])
+    raw_dataset = Dataset.from_list([line.__dict__() for line in data])
 
     def process(row):
         source_enc = encoder.encode(tokenizer(row['transcription']), vocabulary_index=0)
@@ -113,8 +111,20 @@ def prepare_dataset(train_path: str, dev_path: str, tokenizer, model_input_lengt
                 'labels': torch.tensor(output_enc).to(device),
                 'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
 
-    dataset = DatasetDict()
-    print("Preparing datasets...")
-    dataset['train'] = raw_dataset['train'].map(process)
-    dataset['dev'] = raw_dataset['dev'].map(process)
-    return dataset, encoder
+    return raw_dataset.map(process)
+
+
+def write_predictions(path: str, preds, encoder: MultiVocabularyEncoder):
+    """Writes the predictions to a new file, which uses the file in `path` as input"""
+    decoded_preds = encoder.batch_decode(preds)
+    next_line = 0
+    with open(path, 'r') as input:
+        with open('output', 'w') as output:
+            for line in input:
+                line_prefix = line[:2]
+                if line_prefix == '\\g':
+                    output_line = line_prefix + ' ' + ' '.join(decoded_preds[next_line])
+                    output.write(output_line)
+                    next_line += 1
+                else:
+                    output.write(line)

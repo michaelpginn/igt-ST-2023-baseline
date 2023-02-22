@@ -3,10 +3,11 @@ from transformers import BartConfig, BartForConditionalGeneration, Seq2SeqTraini
 import click
 import numpy as np
 import wandb
-from data import prepare_dataset
+from data import prepare_dataset, load_data_file, create_encoder, write_predictions
 from custom_tokenizers import word_tokenize
 from encoder import MultiVocabularyEncoder
 from eval import eval_morpheme_glosses
+from datasets import DatasetDict
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -15,11 +16,11 @@ def create_model(encoder: MultiVocabularyEncoder, sequence_length):
     print("Creating model...")
     config = BartConfig(
         vocab_size=encoder.vocab_size(),
-        d_model=100,
-        encoder_layers=3,
-        decoder_layers=3,
-        encoder_attention_heads=5,
-        decoder_attention_heads=5,
+        # d_model=100,
+        # encoder_layers=3,
+        # decoder_layers=3,
+        # encoder_attention_heads=5,
+        # decoder_attention_heads=5,
         max_position_embeddings=sequence_length,
         pad_token_id=encoder.PAD_ID,
         bos_token_id=encoder.BOS_ID,
@@ -68,11 +69,14 @@ def create_trainer(model: BartForConditionalGeneration, dataset, encoder: MultiV
     trainer = Seq2SeqTrainer(
         model,
         args,
-        train_dataset=dataset["train"],
-        eval_dataset=dataset["dev"],
+        train_dataset=dataset["train"] if dataset else None,
+        eval_dataset=dataset["dev"] if dataset else None,
         compute_metrics=compute_metrics
     )
+    Seq2SeqTrainer()
     return trainer
+
+
 
 
 languages = {
@@ -88,31 +92,47 @@ tokenizers = {
     'word': word_tokenize
 }
 
+
 @click.command()
+@click.argument('mode')
 @click.option("--tokenizer", help="word, bpe, or char", type=str, required=True)
 @click.option("--lang", help="Which language to train", type=str, required=True)
-def main(tokenizer: str, lang: str):
-    wandb.init(project="igt-generation", entity="michael-ginn")
+@click.option("--pretrained_path", help="Path to pretrained model", type=click.Path(exists=True))
+@click.option("--data_path", help="The dataset to run predictions on. Only valid in predict mode.", type=click.Path(exists=True))
+def main(mode: str, tokenizer: str, lang: str, pretrained_path: str, data_path: str):
+    if mode == 'train':
+        wandb.init(project="igt-generation", entity="michael-ginn")
 
     MODEL_INPUT_LENGTH = 512
 
-    train_path = f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-train-track1-uncovered"
-    dev_path = f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track1-uncovered"
+    train_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-train-track1-uncovered")
+    dev_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track1-uncovered")
 
-    dataset, encoder = prepare_dataset(train_path=train_path,
-                                       dev_path=dev_path,
-                                       tokenizer=tokenizers[tokenizer],
-                                       model_input_length=MODEL_INPUT_LENGTH,
-                                       threshold=2,
-                                       device=device)
-    model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
-    trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=100)
-    print("Training...")
-    trainer.train()
-    print("Saving model to ./output")
-    trainer.save_model('./output')
-    print("Model saved at ./output")
+    print("Preparing datasets...")
+    encoder = create_encoder(train_data, tokenizer=tokenizers[tokenizer], threshold=1)
 
+    if mode == 'train':
+        dataset = DatasetDict()
+        dataset['train'] = prepare_dataset(data=train_data, tokenizer=tokenizers[tokenizer],
+                                           model_input_length=MODEL_INPUT_LENGTH, device=device)
+        dataset['dev'] = prepare_dataset(data=dev_data, tokenizer=tokenizers[tokenizer],
+                                         model_input_length=MODEL_INPUT_LENGTH, device=device)
+        model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
+        trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=100)
+
+        print("Training...")
+        trainer.train()
+        print("Saving model to ./output")
+        trainer.save_model('./output')
+        print("Model saved at ./output")
+    elif mode == 'predict':
+        predict_data = load_data_file(data_path)
+        predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizers[tokenizer],
+                                       model_input_length=MODEL_INPUT_LENGTH, device=device)
+        model = BartForConditionalGeneration.from_pretrained(pretrained_path)
+        trainer = create_trainer(model, encoder, batch_size=16, lr=2e-5, max_epochs=100)
+        preds, _ = trainer.predict(test_dataset=predict_data)
+        write_predictions(data_path, preds)
 
 if __name__ == "__main__":
     main()
