@@ -32,6 +32,7 @@ def create_trainer(model: RobertaForTokenClassification, dataset, encoder: Multi
         preds, labels = eval_preds
         if isinstance(preds, tuple):
             preds = preds[0]
+        preds = np.argmax(preds, axis=2)
 
         # Decode predicted output
         decoded_preds = encoder.batch_decode(preds, from_vocabulary_index=2)
