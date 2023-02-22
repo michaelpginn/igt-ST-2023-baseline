@@ -6,7 +6,7 @@ import wandb
 from data import prepare_dataset, load_data_file, create_encoder, write_predictions
 from custom_tokenizers import tokenizers
 from encoder import MultiVocabularyEncoder, special_chars
-from eval import eval_morpheme_glosses
+from eval import eval_morpheme_glosses, eval_word_glosses
 from datasets import DatasetDict
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -42,7 +42,7 @@ def create_trainer(model: RobertaForTokenClassification, dataset, encoder: Multi
         labels = np.where(labels != -100, labels, encoder.PAD_ID)
         decoded_labels = encoder.batch_decode(labels, from_vocabulary_index=2)
         print(decoded_labels[0:1])
-        return eval_morpheme_glosses(pred_morphemes=decoded_preds, gold_morphemes=decoded_labels)
+        return eval_word_glosses(pred_morphemes=decoded_preds, gold_morphemes=decoded_labels)
 
     args = TrainingArguments(
         output_dir=f"../training-checkpoints",
