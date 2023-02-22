@@ -5,7 +5,7 @@ import numpy as np
 import wandb
 from data import prepare_dataset, load_data_file, create_encoder, write_predictions
 from custom_tokenizers import tokenizers
-from encoder import MultiVocabularyEncoder
+from encoder import MultiVocabularyEncoder, special_chars
 from eval import eval_morpheme_glosses
 from datasets import DatasetDict
 
@@ -18,7 +18,7 @@ def create_model(encoder: MultiVocabularyEncoder, sequence_length):
         vocab_size=encoder.vocab_size(),
         max_position_embeddings=sequence_length,
         pad_token_id=encoder.PAD_ID,
-        num_labels=len(encoder.vocabularies[2])
+        num_labels=len(encoder.vocabularies[2]) + len(special_chars)
     )
     model = RobertaForTokenClassification(config)
     print(model.config)
