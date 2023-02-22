@@ -73,7 +73,6 @@ def create_trainer(model: BartForConditionalGeneration, dataset, encoder: MultiV
         eval_dataset=dataset["dev"] if dataset else None,
         compute_metrics=compute_metrics
     )
-    Seq2SeqTrainer()
     return trainer
 
 
