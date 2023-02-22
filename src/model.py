@@ -111,9 +111,9 @@ def main(mode: str, tokenizer: str, lang: str, pretrained_path: str, data_path: 
 
     if mode == 'train':
         dataset = DatasetDict()
-        dataset['train'] = prepare_dataset(data=train_data, tokenizer=tokenizers[tokenizer],
+        dataset['train'] = prepare_dataset(data=train_data, tokenizer=tokenizers[tokenizer], encoder=encoder,
                                            model_input_length=MODEL_INPUT_LENGTH, device=device)
-        dataset['dev'] = prepare_dataset(data=dev_data, tokenizer=tokenizers[tokenizer],
+        dataset['dev'] = prepare_dataset(data=dev_data, tokenizer=tokenizers[tokenizer], encoder=encoder,
                                          model_input_length=MODEL_INPUT_LENGTH, device=device)
         model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
         trainer = create_trainer(model, dataset, encoder, batch_size=16, lr=2e-5, max_epochs=100)
@@ -125,7 +125,7 @@ def main(mode: str, tokenizer: str, lang: str, pretrained_path: str, data_path: 
         print("Model saved at ./output")
     elif mode == 'predict':
         predict_data = load_data_file(data_path)
-        predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizers[tokenizer],
+        predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizers[tokenizer], encoder=encoder,
                                        model_input_length=MODEL_INPUT_LENGTH, device=device)
         model = BartForConditionalGeneration.from_pretrained(pretrained_path)
         trainer = create_trainer(model, encoder, batch_size=16, lr=2e-5, max_epochs=100)
