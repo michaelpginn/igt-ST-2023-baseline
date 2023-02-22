@@ -77,8 +77,6 @@ def create_trainer(model: BartForConditionalGeneration, dataset, encoder: MultiV
     return trainer
 
 
-
-
 languages = {
     'arp': 'Arapaho',
     'git': 'Gitksan',
@@ -109,7 +107,7 @@ def main(mode: str, tokenizer: str, lang: str, pretrained_path: str, data_path: 
     dev_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track1-uncovered")
 
     print("Preparing datasets...")
-    encoder = create_encoder(train_data, tokenizer=tokenizers[tokenizer], threshold=1)
+    encoder = create_encoder(train_data, tokenizer=tokenizers[tokenizer], threshold=2)
 
     if mode == 'train':
         dataset = DatasetDict()
@@ -133,6 +131,7 @@ def main(mode: str, tokenizer: str, lang: str, pretrained_path: str, data_path: 
         trainer = create_trainer(model, encoder, batch_size=16, lr=2e-5, max_epochs=100)
         preds, _ = trainer.predict(test_dataset=predict_data)
         write_predictions(data_path, preds)
+
 
 if __name__ == "__main__":
     main()

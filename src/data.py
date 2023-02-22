@@ -62,7 +62,7 @@ def load_data_file(path: str) -> List[IGTLine]:
     return all_data
 
 
-def create_encoder(train_data: list[IGTLine], threshold: int, tokenizer):
+def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer):
     """Creates an encoder with the vocabulary contained in train_data"""
     # Create the vocab for the source language
     source_data = [tokenizer(line.transcription) for line in train_data]
