@@ -116,7 +116,7 @@ def main(mode: str, tokenizer: str, lang: str, pretrained_path: str, data_path: 
         dataset['dev'] = prepare_dataset(data=dev_data, tokenizer=tokenizers[tokenizer], encoder=encoder,
                                          model_input_length=MODEL_INPUT_LENGTH, device=device)
         model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
-        trainer = create_trainer(model, dataset, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=100)
+        trainer = create_trainer(model, dataset=dataset, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=100)
 
         print("Training...")
         trainer.train()
@@ -128,7 +128,7 @@ def main(mode: str, tokenizer: str, lang: str, pretrained_path: str, data_path: 
         predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizers[tokenizer], encoder=encoder,
                                        model_input_length=MODEL_INPUT_LENGTH, device=device)
         model = BartForConditionalGeneration.from_pretrained(pretrained_path)
-        trainer = create_trainer(model, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=100)
+        trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=100)
         preds, _ = trainer.predict(test_dataset=predict_data)
         write_predictions(data_path, preds)
 
