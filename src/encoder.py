@@ -74,8 +74,9 @@ class MultiVocabularyEncoder():
             else:
                 indices = seq.tolist()
             if from_vocabulary_index is not None:
-                return [self.vocabularies[from_vocabulary_index][index-len(special_chars)] for index in indices if (index >= len(special_chars) or index == 0)]
-            return [self.all_vocab[index] for index in indices if (index >= len(special_chars) or index == 0)]
+                decode_vocab = self.vocabularies[from_vocabulary_index]
+                return ['[UNK]' if index == 0 else decode_vocab[index-len(special_chars)] for index in indices if (index >= len(special_chars) or index == 0)]
+            return ['[UNK]' if index == 0 else self.all_vocab[index] for index in indices if (index >= len(special_chars) or index == 0)]
 
         return [decode(seq) for seq in batch]
 
