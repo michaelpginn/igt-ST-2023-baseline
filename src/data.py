@@ -144,7 +144,9 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
 
 def write_predictions(path: str, preds, encoder: MultiVocabularyEncoder, from_vocabulary_index=None):
     """Writes the predictions to a new file, which uses the file in `path` as input"""
+    print(preds[0])
     decoded_preds = encoder.batch_decode(preds, from_vocabulary_index=from_vocabulary_index)
+    print(decoded_preds[0])
     next_line = 0
     with open(path, 'r') as input:
         with open('output_preds', 'w') as output:
