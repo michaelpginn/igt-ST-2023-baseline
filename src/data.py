@@ -8,7 +8,7 @@ from encoder import create_vocab, MultiVocabularyEncoder
 
 class IGTLine:
     """A single line of IGT"""
-    def __init__(self, transcription: str, segmentation: Optional[str], glosses: str, translation: str):
+    def __init__(self, transcription: str, segmentation: Optional[str], glosses: Optional[str], translation: str):
         self.transcription = transcription
         self.segmentation = segmentation
         self.glosses = glosses
@@ -17,17 +17,22 @@ class IGTLine:
     def __repr__(self):
         return f"Trnsc:\t{self.transcription}\nSegm:\t{self.segmentation}\nGloss:\t{self.glosses}\nTrnsl:\t{self.translation}\n\n"
 
-    def gloss_list(self, segmented=False):
+    def gloss_list(self, segmented=False) -> Optional[List[str]]:
         """Returns the gloss line of the IGT as a list.
         :param segmented: If True, will return each morpheme gloss as a separate item.
         """
+        if self.glosses is None:
+            return None
         if not segmented:
             return self.glosses.split()
         else:
             return re.split("\s|-", self.glosses)
 
     def __dict__(self):
-        return {'transcription': self.transcription, 'translation': self.translation, 'glosses': self.gloss_list(segmented=True)}
+        d = {'transcription': self.transcription, 'translation': self.translation}
+        if self.glosses is not None:
+            d['glosses'] = self.gloss_list(segmented=True)
+        return d
 
 
 def load_data_file(path: str) -> List[IGTLine]:
@@ -45,7 +50,7 @@ def load_data_file(path: str) -> List[IGTLine]:
                 current_entry[0] = line[3:].strip()
             elif line_prefix == '\\m' and current_entry[1] == None:
                 current_entry[1] = line[3:].strip()
-            elif line_prefix == '\\g' and current_entry[2] == None:
+            elif line_prefix == '\\g' and current_entry[2] == None and len(line[3:].strip()) > 0:
                 current_entry[2] = line[3:].strip()
             elif line_prefix == '\\l' and current_entry[3] == None:
                 current_entry[3] = line[3:].strip()
@@ -95,21 +100,25 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
         # Create attention mask
         attention_mask = [1] * initial_length + [0] * (model_input_length - initial_length)
 
-        # Encode the output
-        output_enc = encoder.encode(row['glosses'], vocabulary_index=1)
-        output_enc = output_enc + [encoder.EOS_ID]
+        # Encode the output, if present
+        if 'glosses' in row:
+            output_enc = encoder.encode(row['glosses'], vocabulary_index=1)
+            output_enc = output_enc + [encoder.EOS_ID]
 
-        # Shift one position right
-        decoder_input_ids = [encoder.BOS_ID] + output_enc
+            # Shift one position right
+            decoder_input_ids = [encoder.BOS_ID] + output_enc
 
-        # Pad both
-        output_enc += [encoder.PAD_ID] * (model_input_length - len(output_enc))
-        decoder_input_ids += [encoder.PAD_ID] * (model_input_length - len(decoder_input_ids))
+            # Pad both
+            output_enc += [encoder.PAD_ID] * (model_input_length - len(output_enc))
+            decoder_input_ids += [encoder.PAD_ID] * (model_input_length - len(decoder_input_ids))
 
-        return {'input_ids': torch.tensor(combined_enc).to(device),
-                'attention_mask': torch.tensor(attention_mask).to(device),
-                'labels': torch.tensor(output_enc).to(device),
-                'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
+            return {'input_ids': torch.tensor(combined_enc).to(device),
+                    'attention_mask': torch.tensor(attention_mask).to(device),
+                    'labels': torch.tensor(output_enc).to(device),
+                    'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
+        else:
+            return {'input_ids': torch.tensor(combined_enc).to(device),
+                    'attention_mask': torch.tensor(attention_mask).to(device)}
 
     return raw_dataset.map(process)
 
@@ -119,7 +128,7 @@ def write_predictions(path: str, preds, encoder: MultiVocabularyEncoder):
     decoded_preds = encoder.batch_decode(preds)
     next_line = 0
     with open(path, 'r') as input:
-        with open('output', 'w') as output:
+        with open('output_preds', 'w') as output:
             for line in input:
                 line_prefix = line[:2]
                 if line_prefix == '\\g':
