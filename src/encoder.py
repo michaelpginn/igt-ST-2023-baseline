@@ -40,7 +40,7 @@ class MultiVocabularyEncoder():
 
     def encode_word(self, word, vocabulary_index, separate_vocab=False):
         """Converts a word to the integer encoding"""
-        if not word.isupper():
+        if not word.isupper() and vocabulary_index < 2:
             word = word.lower()
 
         if word in special_chars:
