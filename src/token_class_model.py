@@ -91,7 +91,7 @@ def main(mode: str, lang: str, pretrained_path: str, data_path: str):
     dev_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track1-uncovered")
 
     print("Preparing datasets...")
-    encoder = create_encoder(train_data, tokenizer=tokenizers['word_no_punc'], threshold=1, segmented=False)
+    encoder = create_encoder(train_data, tokenizer=tokenizers['word_no_punc'], threshold=1, for_token_classification=True)
 
     if mode == 'train':
         dataset = DatasetDict()
