@@ -81,7 +81,7 @@ def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, for_tok
 
     if for_token_classification:
         target_vocab = create_vocab(translation_data, threshold=threshold)
-        gloss_vocab = create_vocab(gloss_data, threshold=threshold)
+        gloss_vocab = create_vocab(gloss_data, threshold=threshold, should_not_lower=True)
         return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab, gloss_vocab])
     else:
         target_vocab = create_vocab(translation_data + gloss_data, threshold=threshold)

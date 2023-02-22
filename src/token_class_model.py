@@ -36,10 +36,12 @@ def create_trainer(model: RobertaForTokenClassification, dataset, encoder: Multi
 
         # Decode predicted output
         decoded_preds = encoder.batch_decode(preds, from_vocabulary_index=2)
+        print(decoded_preds)
 
         # Decode (gold) labels
         labels = np.where(labels != -100, labels, encoder.PAD_ID)
         decoded_labels = encoder.batch_decode(labels)
+        print(decoded_labels)
         return eval_morpheme_glosses(pred_morphemes=decoded_preds, gold_morphemes=decoded_labels)
 
     args = TrainingArguments(
