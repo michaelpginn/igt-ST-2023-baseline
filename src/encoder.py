@@ -48,7 +48,7 @@ class MultiVocabularyEncoder():
         elif vocabulary_index < len(self.vocabularies):
             if word in self.vocabularies[vocabulary_index]:
                 if separate_vocab:
-                    return self.vocabularies[vocabulary_index].index(word)
+                    return self.vocabularies[vocabulary_index].index(word) + 1
                 # Otherwise we need the combined index
                 prior_vocab_padding = len(sum(self.vocabularies[:vocabulary_index], []))  # Sums the length of all preceding vocabularies
                 return self.vocabularies[vocabulary_index].index(word) + prior_vocab_padding + len(special_chars)
@@ -62,14 +62,19 @@ class MultiVocabularyEncoder():
         """Encodes a sentence (a list of strings)"""
         return [self.encode_word(word, vocabulary_index=vocabulary_index, separate_vocab=separate_vocab) for word in sentence]
 
-    def batch_decode(self, batch):
-        """Decodes a batch of indices to the actual words"""
-
+    def batch_decode(self, batch, from_vocabulary_index=None):
+        """Decodes a batch of indices to the actual words
+        :param batch: The batch of ids
+        :param from_vocabulary_index: If provided, returns only words from the specified vocabulary. For instance, id=1 and vocab_index=2 will return the first word in the second vocabulary.
+        """
+        print(batch)
         def decode(seq):
             if isinstance(seq, torch.Tensor):
                 indices = seq.detach().cpu().tolist()
             else:
                 indices = seq.tolist()
+            if from_vocabulary_index is not None:
+                return [self.vocabularies[from_vocabulary_index][index-1] for index in indices if (index == 0)]
             return [self.all_vocab[index] for index in indices if (index >= len(special_chars) or index == 0)]
 
         return [decode(seq) for seq in batch]
