@@ -17,7 +17,7 @@ def eval_accuracy(pred: List[List[str]], gold: List[List[str]]) -> dict:
 
         for token_index in range(len(entry_gold)):
             # For each token, check if it matches
-            if token_index < len(entry_pred) and entry_pred[token_index] == entry_gold[token_index]:
+            if token_index < len(entry_pred) and entry_pred[token_index] == entry_gold[token_index] and entry_pred[token_index] != '[UNK]':
                 entry_correct_predictions += 1
 
         entry_accuracy = (entry_correct_predictions / len(entry_gold))
@@ -72,6 +72,13 @@ def eval_morpheme_glosses(pred_morphemes: List[List[str]], gold_morphemes: List[
     class_eval = eval_stems_grams(pred_morphemes, gold_morphemes)
     bleu = bleu_score(pred_morphemes, [[line] for line in gold_morphemes])
     return {'morpheme_level': morpheme_eval, 'classes': class_eval, 'bleu': bleu}
+
+
+def eval_word_glosses(pred_words: List[List[str]], gold_words: List[List[str]]):
+    """Evaluates the performance at the morpheme level"""
+    word_eval = eval_accuracy(pred_words, gold_words)
+    bleu = bleu_score(pred_words, [[line] for line in gold_words])
+    return {'word_level': word_eval, 'bleu': bleu}
 
 
 @click.command()
