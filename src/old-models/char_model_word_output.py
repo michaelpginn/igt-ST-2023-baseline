@@ -241,7 +241,7 @@ def prepare_data(paths: List[str], model_input_length: int):
         
     
 def create_model(vocab_size, sequence_length=512):
-    print("Creating model.py...")
+    print("Creating seq_to_seq_model.py...")
     config = BartConfig(
         vocab_size=vocab_size,
         max_position_embeddings=512,
@@ -321,7 +321,7 @@ def main():
     trainer = create_trainer(model, dataset, encoder, batch_size=4, lr=2e-5, max_epochs=200)
     print("Training...")
     trainer.train()
-    print("Saving model.py to ./output")
+    print("Saving seq_to_seq_model.py to ./output")
     trainer.save_model('./output')
     print("Model saved at ./output")
 
