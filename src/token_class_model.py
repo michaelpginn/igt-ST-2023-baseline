@@ -115,6 +115,7 @@ def main(mode: str, lang: str, pretrained_path: str, data_path: str):
         model = RobertaForTokenClassification.from_pretrained(pretrained_path)
         trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=100)
         preds = trainer.predict(test_dataset=predict_data).predictions
+        preds = np.argmax(preds, axis=2)
         write_predictions(data_path, preds, encoder=encoder)
 
 
