@@ -90,7 +90,6 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
     raw_dataset = Dataset.from_list([line.__dict__() for line in data])
 
     def process(row):
-        print(row)
         source_enc = encoder.encode(tokenizer(row['transcription']), vocabulary_index=0)
         translation_enc = encoder.encode(tokenizer(row['translation']), vocabulary_index=1)
         combined_enc = source_enc + translation_enc
