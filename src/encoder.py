@@ -1,6 +1,7 @@
 """Defines a tokenizer that uses two distinct vocabulary"""
 from typing import List
 import torch
+import pickle
 
 special_chars = ["[UNK]", "[SEP]", "[PAD]", "[MASK]", "[BOS]", "[EOS]"]
 
@@ -23,7 +24,7 @@ def create_vocab(sentences: List[List[str]], threshold=2, should_not_lower=False
     return sorted(all_words_list)
 
 
-class MultiVocabularyEncoder():
+class MultiVocabularyEncoder:
     """Encodes and decodes words to an integer representation"""
 
     def __init__(self, vocabularies: List[List[str]]):
@@ -38,9 +39,15 @@ class MultiVocabularyEncoder():
         self.BOS_ID = special_chars.index("[BOS]")
         self.EOS_ID = special_chars.index("[EOS]")
 
-    def encode_word(self, word, vocabulary_index, separate_vocab=False):
-        """Converts a word to the integer encoding"""
+    def encode_word(self, word: str, vocabulary_index: int, separate_vocab=False) -> int:
+        """Converts a word to the integer encoding
+        :param word: The word to encode
+        :param vocabulary_index: The index of the vocabulary to use
+        :param separate_vocab: If True, get the index of the word in just the specified vocabulary.
+        :return: An integer encoding
+        """
         if not word.isupper() and vocabulary_index < 2:
+            # A bit of a hack, but we don't want to lowercase combined glosses, which should be in the third vocab
             word = word.lower()
 
         if word in special_chars:
@@ -67,7 +74,6 @@ class MultiVocabularyEncoder():
         :param batch: The batch of ids
         :param from_vocabulary_index: If provided, returns only words from the specified vocabulary. For instance, id=1 and vocab_index=2 will return the first word in the second vocabulary.
         """
-        print(batch)
         def decode(seq):
             if isinstance(seq, torch.Tensor):
                 indices = seq.detach().cpu().tolist()
@@ -82,3 +88,13 @@ class MultiVocabularyEncoder():
 
     def vocab_size(self):
         return len(self.all_vocab)
+
+    def save(self):
+        """Saves the encoder to a file"""
+        with open('encoder_data.pkl', 'wb') as out:
+            pickle.dump(self, out, pickle.HIGHEST_PROTOCOL)
+
+
+def load_encoder(path) -> MultiVocabularyEncoder:
+    with open(path, 'rb') as inp:
+        return pickle.load(inp)

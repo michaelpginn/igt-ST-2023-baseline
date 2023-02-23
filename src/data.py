@@ -3,8 +3,16 @@ from typing import Optional, List
 import re
 from datasets import Dataset, DatasetDict
 import torch
+from enum import Enum
 from custom_tokenizers import word_tokenize
 from encoder import create_vocab, MultiVocabularyEncoder
+
+
+class ModelType(Enum):
+    """Defines whether the model uses a token classification head or seq to seq"""
+    TOKEN_CLASS = 1
+    SEQ_TO_SEQ = 2
+
 
 class IGTLine:
     """A single line of IGT"""
@@ -69,7 +77,7 @@ def load_data_file(path: str) -> List[IGTLine]:
     return all_data
 
 
-def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, for_token_classification=False):
+def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, model_type: ModelType = ModelType.SEQ_TO_SEQ):
     """Creates an encoder with the vocabulary contained in train_data"""
     # Create the vocab for the source language
     source_data = [tokenizer(line.transcription) for line in train_data]
@@ -77,24 +85,27 @@ def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, for_tok
 
     # Create the shared vocab for the translation and glosses
     translation_data = [tokenizer(line.translation) for line in train_data]
-    gloss_data = [line.gloss_list(segmented=not for_token_classification) for line in train_data]
+    gloss_data = [line.gloss_list(segmented=model_type == ModelType.SEQ_TO_SEQ) for line in train_data]
 
-    if for_token_classification:
+    if model_type == ModelType.TOKEN_CLASS:
+        # Create a separate vocab for the output glosses
         target_vocab = create_vocab(translation_data, threshold=threshold)
         gloss_vocab = create_vocab(gloss_data, threshold=threshold, should_not_lower=True)
         return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab, gloss_vocab])
-    else:
+    elif model_type == ModelType.SEQ_TO_SEQ:
+        # Combine the translation and gloss vocabularies, in case there's shared words
         target_vocab = create_vocab(translation_data + gloss_data, threshold=threshold)
-        # Create an encoder for both vocabularies
         return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab])
 
 
-def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEncoder, model_input_length: int, for_token_classification: bool, device):
+def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEncoder, model_input_length: int, model_type: ModelType, device):
     """Loads data, creates tokenizer, and creates a dataset object for easy manipulation"""
 
-    if for_token_classification:
+    if model_type == ModelType.TOKEN_CLASS:
+        # Token classification can only operate on word glosses
         for line in data:
             line.should_segment = False
+
     # Create a dataset
     raw_dataset = Dataset.from_list([line.__dict__() for line in data])
 
@@ -112,8 +123,8 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
 
         # Encode the output, if present
         if 'glosses' in row:
-            if not for_token_classification:
-                # Seq to seq
+            if model_type == ModelType.SEQ_TO_SEQ:
+                # For seq2seq, we need to prepare decoder input and labels, which are just the glosses
                 output_enc = encoder.encode(row['glosses'], vocabulary_index=1)
                 output_enc = output_enc + [encoder.EOS_ID]
 
@@ -127,7 +138,8 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
                         'attention_mask': torch.tensor(attention_mask).to(device),
                         'labels': torch.tensor(output_enc).to(device),
                         'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
-            else:
+            elif model_type == ModelType.TOKEN_CLASS:
+                # For token class., the labels are just the glosses for each word
                 output_enc = encoder.encode(row['glosses'], vocabulary_index=2, separate_vocab=True)
                 output_enc += [encoder.PAD_ID] * (len(translation_enc) + 1)
                 output_enc += [-100] * (model_input_length - len(output_enc))
@@ -136,6 +148,7 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
                         'labels': torch.tensor(output_enc).to(device)}
 
         else:
+            # If we have no glosses, this must be a prediction task
             return {'input_ids': torch.tensor(combined_enc).to(device),
                     'attention_mask': torch.tensor(attention_mask).to(device)}
 

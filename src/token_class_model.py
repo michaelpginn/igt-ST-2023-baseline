@@ -3,11 +3,12 @@ from transformers import RobertaForTokenClassification, RobertaConfig, TrainingA
 import click
 import numpy as np
 import wandb
-from data import prepare_dataset, load_data_file, create_encoder, write_predictions
+from data import prepare_dataset, load_data_file, create_encoder, write_predictions, ModelType
 from custom_tokenizers import tokenizers
-from encoder import MultiVocabularyEncoder, special_chars
+from encoder import MultiVocabularyEncoder, special_chars, load_encoder
 from eval import eval_morpheme_glosses, eval_word_glosses
 from datasets import DatasetDict
+from typing import Optional
 
 device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
@@ -25,7 +26,7 @@ def create_model(encoder: MultiVocabularyEncoder, sequence_length):
     return model.to(device)
 
 
-def create_trainer(model: RobertaForTokenClassification, dataset, encoder: MultiVocabularyEncoder, batch_size, lr, max_epochs):
+def create_trainer(model: RobertaForTokenClassification, dataset: Optional[DatasetDict], encoder: MultiVocabularyEncoder, batch_size, lr, max_epochs):
     print("Creating trainer...")
 
     def compute_metrics(eval_preds):
@@ -83,8 +84,9 @@ languages = {
 @click.argument('mode')
 @click.option("--lang", help="Which language to train", type=str, required=True)
 @click.option("--pretrained_path", help="Path to pretrained model", type=click.Path(exists=True))
+@click.option("--encoder_path", help="Path to pretrained encoder", type=click.Path(exists=True))
 @click.option("--data_path", help="The dataset to run predictions on. Only valid in predict mode.", type=click.Path(exists=True))
-def main(mode: str, lang: str, pretrained_path: str, data_path: str):
+def main(mode: str, lang: str, pretrained_path: str, encoder_path: str, data_path: str):
     if mode == 'train':
         wandb.init(project="igt-generation", entity="michael-ginn")
 
@@ -94,14 +96,16 @@ def main(mode: str, lang: str, pretrained_path: str, data_path: str):
     dev_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track1-uncovered")
 
     print("Preparing datasets...")
-    encoder = create_encoder(train_data, tokenizer=tokenizers['word_no_punc'], threshold=1, for_token_classification=True)
 
     if mode == 'train':
+        encoder = create_encoder(train_data, tokenizer=tokenizers['word_no_punc'], threshold=1,
+                                 model_type=ModelType.TOKEN_CLASS)
+        encoder.save()
         dataset = DatasetDict()
         dataset['train'] = prepare_dataset(data=train_data, tokenizer=tokenizers['word_no_punc'], encoder=encoder,
-                                           model_input_length=MODEL_INPUT_LENGTH, for_token_classification=True, device=device)
+                                           model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         dataset['dev'] = prepare_dataset(data=dev_data, tokenizer=tokenizers['word_no_punc'], encoder=encoder,
-                                         model_input_length=MODEL_INPUT_LENGTH, for_token_classification=True, device=device)
+                                         model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
         trainer = create_trainer(model, dataset=dataset, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
 
@@ -111,9 +115,10 @@ def main(mode: str, lang: str, pretrained_path: str, data_path: str):
         trainer.save_model('./output')
         print("Model saved at ./output")
     elif mode == 'predict':
+        encoder = load_encoder(encoder_path)
         predict_data = load_data_file(data_path)
         predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizers['word_no_punc'], encoder=encoder,
-                                       model_input_length=MODEL_INPUT_LENGTH, for_token_classification=True, device=device)
+                                       model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         model = RobertaForTokenClassification.from_pretrained(pretrained_path)
         trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
         preds = trainer.predict(test_dataset=predict_data).predictions
