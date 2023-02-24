@@ -52,7 +52,7 @@ def create_trainer(model: RobertaForTokenClassification, dataset: Optional[Datas
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
         gradient_accumulation_steps=3,
-        eval_accumulation_steps=20,
+        eval_accumulation_steps=1,
         weight_decay=0.01,
         save_strategy="epoch",
         save_total_limit=3,
