@@ -2,12 +2,14 @@
 #SBATCH --nodes=1           # Number of requested nodes
 #SBATCH --gres=gpu:v100
 #SBATCH --ntasks=4          # Number of requested cores
+#SBATCH --mem=16G
 #SBATCH --time=3:00:00          # Max walltime              # Specify QOS
 #SBATCH --qos=blanca-kann
 #SBATCH --out=train_igt.%j.out      # Output file name
-#SBATCH --error=s_suffix_rw_known_100.%j.err
+#SBATCH --error=train_igt.%j.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=michael.ginn@colorado.edu
+
 # purge all existing modules
 module purge
 # Load the python module
