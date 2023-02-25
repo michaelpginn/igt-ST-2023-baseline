@@ -51,7 +51,7 @@ def create_trainer(model: RobertaForTokenClassification, dataset: Optional[Datas
         learning_rate=lr,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
-        gradient_accumulation_steps=3,
+        gradient_accumulation_steps=1,
         weight_decay=0.01,
         save_strategy="epoch",
         save_total_limit=3,
@@ -120,7 +120,7 @@ def main(mode: str, lang: str, pretrained_path: str, encoder_path: str, data_pat
         predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizers['word_no_punc'], encoder=encoder,
                                        model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         model = RobertaForTokenClassification.from_pretrained(pretrained_path)
-        trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
+        trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=200)
         preds = trainer.predict(test_dataset=predict_data).predictions
         preds = np.argmax(preds, axis=2)
         write_predictions(data_path, preds, encoder=encoder, from_vocabulary_index=2)
