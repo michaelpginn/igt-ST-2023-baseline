@@ -107,7 +107,7 @@ def main(mode: str, lang: str, pretrained_path: str, encoder_path: str, data_pat
         dataset['dev'] = prepare_dataset(data=dev_data, tokenizer=tokenizers['word_no_punc'], encoder=encoder,
                                          model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
-        trainer = create_trainer(model, dataset=dataset, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
+        trainer = create_trainer(model, dataset=dataset, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=200)
 
         print("Training...")
         trainer.train()
@@ -120,7 +120,7 @@ def main(mode: str, lang: str, pretrained_path: str, encoder_path: str, data_pat
         predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizers['word_no_punc'], encoder=encoder,
                                        model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         model = RobertaForTokenClassification.from_pretrained(pretrained_path)
-        trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=200)
+        trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
         preds = trainer.predict(test_dataset=predict_data).predictions
         preds = np.argmax(preds, axis=2)
         write_predictions(data_path, preds, encoder=encoder, from_vocabulary_index=2)
