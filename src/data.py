@@ -41,6 +41,8 @@ class IGTLine:
         d = {'transcription': self.transcription, 'translation': self.translation}
         if self.glosses is not None:
             d['glosses'] = self.gloss_list(segmented=self.should_segment)
+        if self.segmentation is not None:
+            d['segmentation'] = self.segmentation
         return d
 
 
@@ -77,10 +79,10 @@ def load_data_file(path: str) -> List[IGTLine]:
     return all_data
 
 
-def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, model_type: ModelType = ModelType.SEQ_TO_SEQ):
+def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, model_type: ModelType = ModelType.SEQ_TO_SEQ, split_morphemes=False):
     """Creates an encoder with the vocabulary contained in train_data"""
     # Create the vocab for the source language
-    source_data = [tokenizer(line.transcription) for line in train_data]
+    source_data = [tokenizer(line.segmentation if split_morphemes else line.transcription) for line in train_data]
     source_vocab = create_vocab(source_data, threshold=threshold)
 
     # Create the shared vocab for the translation and glosses
@@ -91,18 +93,18 @@ def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, model_t
         # Create a separate vocab for the output glosses
         target_vocab = create_vocab(translation_data, threshold=threshold)
         gloss_vocab = create_vocab(gloss_data, threshold=threshold, should_not_lower=True)
-        return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab, gloss_vocab])
+        return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab, gloss_vocab], segmented=split_morphemes)
     elif model_type == ModelType.SEQ_TO_SEQ:
         # Combine the translation and gloss vocabularies, in case there's shared words
         target_vocab = create_vocab(translation_data + gloss_data, threshold=threshold)
-        return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab])
+        return MultiVocabularyEncoder(vocabularies=[source_vocab, target_vocab], segmented=split_morphemes)
 
 
 def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEncoder, model_input_length: int, model_type: ModelType, device):
     """Loads data, creates tokenizer, and creates a dataset object for easy manipulation"""
 
-    if model_type == ModelType.TOKEN_CLASS:
-        # Token classification can only operate on word glosses
+    if model_type == ModelType.TOKEN_CLASS and not encoder.segmented:
+        # Token classification for words can only operate on word glosses
         for line in data:
             line.should_segment = False
 
@@ -110,7 +112,7 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
     raw_dataset = Dataset.from_list([line.__dict__() for line in data])
 
     def process(row):
-        source_enc = encoder.encode(tokenizer(row['transcription']), vocabulary_index=0)
+        source_enc = encoder.encode(tokenizer(row['segmentation' if encoder.segmented else 'transcription']), vocabulary_index=0)
         translation_enc = encoder.encode(tokenizer(row['translation']), vocabulary_index=1)
         combined_enc = source_enc + [encoder.SEP_ID] + translation_enc
 

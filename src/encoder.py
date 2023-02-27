@@ -27,12 +27,13 @@ def create_vocab(sentences: List[List[str]], threshold=2, should_not_lower=False
 class MultiVocabularyEncoder:
     """Encodes and decodes words to an integer representation"""
 
-    def __init__(self, vocabularies: List[List[str]]):
+    def __init__(self, vocabularies: List[List[str]], segmented=False):
         """
         :param vocabularies: A list of vocabularies for the tokenizer
         """
         self.vocabularies = vocabularies
         self.all_vocab = special_chars + sum(self.vocabularies, [])
+        self.segmented = segmented
 
         self.PAD_ID = special_chars.index("[PAD]")
         self.SEP_ID = special_chars.index("[SEP]")

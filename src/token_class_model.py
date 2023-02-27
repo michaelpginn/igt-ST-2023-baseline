@@ -83,31 +83,36 @@ languages = {
 @click.command()
 @click.argument('mode')
 @click.option("--lang", help="Which language to train", type=str, required=True)
+@click.option("--track", help="[closed, open] whether to use morpheme segmentation", type=str, required=True)
 @click.option("--pretrained_path", help="Path to pretrained model", type=click.Path(exists=True))
 @click.option("--encoder_path", help="Path to pretrained encoder", type=click.Path(exists=True))
 @click.option("--data_path", help="The dataset to run predictions on. Only valid in predict mode.", type=click.Path(exists=True))
-def main(mode: str, lang: str, pretrained_path: str, encoder_path: str, data_path: str):
+def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: str, data_path: str):
     if mode == 'train':
         wandb.init(project="igt-generation", entity="michael-ginn")
 
     MODEL_INPUT_LENGTH = 512
 
-    train_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-train-track1-uncovered")
-    dev_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track1-uncovered")
+    is_open_track = track == 'open'
+
+    train_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-train-track{'2' if is_open_track else '1'}-uncovered")
+    dev_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track{'2' if is_open_track else '1'}-uncovered")
 
     print("Preparing datasets...")
 
+    tokenizer = tokenizers['morpheme_no_punc' if is_open_track else 'word_no_punc']
+
     if mode == 'train':
-        encoder = create_encoder(train_data, tokenizer=tokenizers['word_no_punc'], threshold=1,
-                                 model_type=ModelType.TOKEN_CLASS)
+        encoder = create_encoder(train_data, tokenizer=tokenizer, threshold=1,
+                                 model_type=ModelType.TOKEN_CLASS, split_morphemes=is_open_track)
         encoder.save()
         dataset = DatasetDict()
-        dataset['train'] = prepare_dataset(data=train_data, tokenizer=tokenizers['word_no_punc'], encoder=encoder,
+        dataset['train'] = prepare_dataset(data=train_data, tokenizer=tokenizer, encoder=encoder,
                                            model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
-        dataset['dev'] = prepare_dataset(data=dev_data, tokenizer=tokenizers['word_no_punc'], encoder=encoder,
+        dataset['dev'] = prepare_dataset(data=dev_data, tokenizer=tokenizer, encoder=encoder,
                                          model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
-        trainer = create_trainer(model, dataset=dataset, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=80)
+        trainer = create_trainer(model, dataset=dataset, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
 
         print("Training...")
         trainer.train()
@@ -117,7 +122,7 @@ def main(mode: str, lang: str, pretrained_path: str, encoder_path: str, data_pat
     elif mode == 'predict':
         encoder = load_encoder(encoder_path)
         predict_data = load_data_file(data_path)
-        predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizers['word_no_punc'], encoder=encoder,
+        predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizer, encoder=encoder,
                                        model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         model = RobertaForTokenClassification.from_pretrained(pretrained_path)
         trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
