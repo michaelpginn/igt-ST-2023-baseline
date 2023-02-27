@@ -116,7 +116,7 @@ def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: s
         dataset['dev'] = prepare_dataset(data=dev_data, tokenizer=tokenizer, encoder=encoder,
                                          model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         model = create_model(encoder=encoder, sequence_length=MODEL_INPUT_LENGTH)
-        trainer = create_trainer(model, dataset=dataset, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
+        trainer = create_trainer(model, dataset=dataset, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=80)
 
         print("Training...")
         trainer.train()
