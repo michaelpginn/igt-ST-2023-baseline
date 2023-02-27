@@ -43,7 +43,11 @@ def create_trainer(model: RobertaForTokenClassification, dataset: Optional[Datas
         labels = np.where(labels != -100, labels, encoder.PAD_ID)
         decoded_labels = encoder.batch_decode(labels, from_vocabulary_index=2)
         print(decoded_labels[0:1])
-        return eval_word_glosses(pred_words=decoded_preds, gold_words=decoded_labels)
+
+        if encoder.segmented:
+            return eval_morpheme_glosses(pred_morphemes=decoded_preds, gold_morphemes=decoded_labels)
+        else:
+            return eval_word_glosses(pred_words=decoded_preds, gold_words=decoded_labels)
 
     args = TrainingArguments(
         output_dir=f"../training-checkpoints",
