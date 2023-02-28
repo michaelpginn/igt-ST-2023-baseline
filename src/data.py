@@ -75,7 +75,6 @@ def load_data_file(path: str) -> List[IGTLine]:
             elif line.strip() != "":
                 # Something went wrong
                 print("Skipping line: ", line)
-                current_entry = [None, None, None, None]
     return all_data
 
 
