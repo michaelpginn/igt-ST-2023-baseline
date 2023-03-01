@@ -24,3 +24,10 @@ python3 eval.py --pred ./predictions --gold ../../GlossingSTPrivate/splits/Tsez/
 ## Results
 
 Trained models: [download here](https://o365coloradoedu-my.sharepoint.com/:f:/g/personal/migi8081_colorado_edu/EhzVMGQwS_5GuV4R1BZYbVIBJbj0zHi09t85zGRuAwEkbw?e=iEIIfH)
+
+### Dev Performance
+| Closed Track ||||||
+| --- | --- | --- | --- | --- | --- |
+| Lang | Morpheme Acc| Word Acc | BLEU (Morpheme) | Stems | Grams |
+| --- | --- | --- | --- | --- | --- |
+| ddo | Ovr: 47.5<br>Avg: 52.9 | Ovr: 71.8<br>Avg: 72.1 | 57.8 | P: 49.7<br>R: 49.2<br>F1: 49.4 | P: 50.7<br>R: 46.1<br>F1: 48.3 |
