@@ -4,13 +4,13 @@ This repository provides the baseline system for the task https://github.com/sig
 Train model:
 
 ```shell
-python3 token_class_model.py train --lang ddo
+python3 token_class_model.py train --lang ddo --track open
 ```
 
 Make predictions:
 
 ```shell
-python3 token_class_model.py predict --lang ddo --pretrained_path ./output --data_path ../../GlossingSTPrivate/splits/Tsez/ddo-dev-track1-covered
+python3 token_class_model.py predict --lang ddo --track open --pretrained_path ./output --data_path ../../GlossingSTPrivate/splits/Tsez/ddo-dev-track1-covered
 ```
 
 Eval predictions:
