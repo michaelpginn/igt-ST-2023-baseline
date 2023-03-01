@@ -4,6 +4,7 @@ from typing import List
 from data import IGTLine, load_data_file
 from torchtext.data.metrics import bleu_score
 import click
+import json
 
 
 def eval_accuracy(pred: List[List[str]], gold: List[List[str]]) -> dict:
@@ -100,7 +101,7 @@ def evaluate_igt(pred: str, gold: str):
     gold_morphemes = [line.gloss_list(segmented=True) for line in gold]
 
     all_eval = {'word_level': word_eval, **eval_morpheme_glosses(pred_morphemes=pred_morphemes, gold_morphemes=gold_morphemes)}
-    print(all_eval)
+    print(json.dumps(all_eval, sort_keys=True, indent=4))
 
 
 if __name__ == '__main__':
