@@ -71,8 +71,6 @@ def eval_morpheme_glosses(pred_morphemes: List[List[str]], gold_morphemes: List[
     """Evaluates the performance at the morpheme level"""
     morpheme_eval = eval_accuracy(pred_morphemes, gold_morphemes)
     class_eval = eval_stems_grams(pred_morphemes, gold_morphemes)
-    print(len(pred_morphemes))
-    print(len(gold_morphemes))
     bleu = bleu_score(pred_morphemes, [[line] for line in gold_morphemes])
     return {'morpheme_level': morpheme_eval, 'classes': class_eval, 'bleu': bleu}
 
