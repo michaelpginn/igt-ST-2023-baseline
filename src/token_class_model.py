@@ -125,6 +125,7 @@ def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: s
         print("Model saved at ./output")
     elif mode == 'predict':
         encoder = load_encoder(encoder_path)
+        print("ENCODER SEGMENTING INPUT: ", encoder.segmented)
         predict_data = load_data_file(data_path)
         predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizer, encoder=encoder,
                                        model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
