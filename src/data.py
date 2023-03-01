@@ -16,7 +16,7 @@ class ModelType(Enum):
 
 class IGTLine:
     """A single line of IGT"""
-    def __init__(self, transcription: str, segmentation: Optional[str], glosses: Optional[str], translation: str):
+    def __init__(self, transcription: str, segmentation: Optional[str], glosses: Optional[str], translation: Optional[str]):
         self.transcription = transcription
         self.segmentation = segmentation
         self.glosses = glosses
@@ -75,6 +75,12 @@ def load_data_file(path: str) -> List[IGTLine]:
             elif line.strip() != "":
                 # Something went wrong
                 print("Skipping line: ", line)
+            else:
+                all_data.append(IGTLine(transcription=current_entry[0],
+                                        segmentation=current_entry[1],
+                                        glosses=current_entry[2],
+                                        translation=None))
+                current_entry = [None, None, None, None]
     return all_data
 
 
@@ -112,9 +118,14 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
     raw_dataset = Dataset.from_list([line.__dict__() for line in data])
 
     def process(row):
-        source_enc = encoder.encode(tokenizer(row['segmentation' if encoder.segmented else 'transcription']), vocabulary_index=0)
-        translation_enc = encoder.encode(tokenizer(row['translation']), vocabulary_index=1)
-        combined_enc = source_enc + [encoder.SEP_ID] + translation_enc
+        source_enc = encoder.encode(tokenizer(row['segmentation' if encoder.segmented else 'transcription']),
+                                    vocabulary_index=0)
+        if row['translation'] is not None:
+            translation_enc = encoder.encode(tokenizer(row['translation']), vocabulary_index=1)
+            combined_enc = source_enc + [encoder.SEP_ID] + translation_enc
+        else:
+            translation_enc = None
+            combined_enc = source_enc
 
         # Pad
         initial_length = len(combined_enc)
@@ -143,7 +154,8 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
             elif model_type == ModelType.TOKEN_CLASS:
                 # For token class., the labels are just the glosses for each word
                 output_enc = encoder.encode(row['glosses'], vocabulary_index=2, separate_vocab=True)
-                output_enc += [encoder.PAD_ID] * (len(translation_enc) + 1)
+                if translation_enc is not None:
+                    output_enc += [encoder.PAD_ID] * (len(translation_enc) + 1)
                 output_enc += [-100] * (model_input_length - len(output_enc))
                 return {'input_ids': torch.tensor(combined_enc).to(device),
                         'attention_mask': torch.tensor(attention_mask).to(device),

@@ -10,6 +10,8 @@ def create_vocab(sentences: List[List[str]], threshold=2, should_not_lower=False
     """Creates a set of the unique words in a list of sentences, only including words that exceed the threshold"""
     all_words = dict()
     for sentence in sentences:
+        if sentence is None:
+            continue
         for word in sentence:
             # Grams should stay uppercase, stems should be lowered
             if not word.isupper() and not should_not_lower:
