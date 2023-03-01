@@ -157,14 +157,14 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
     return raw_dataset.map(process)
 
 
-def write_predictions(path: str, preds, encoder: MultiVocabularyEncoder, from_vocabulary_index=None):
+def write_predictions(path: str, lang: str, preds, encoder: MultiVocabularyEncoder, from_vocabulary_index=None):
     """Writes the predictions to a new file, which uses the file in `path` as input"""
     print(preds[0])
     decoded_preds = encoder.batch_decode(preds, from_vocabulary_index=from_vocabulary_index)
     print(decoded_preds[0])
     next_line = 0
     with open(path, 'r') as input:
-        with open('output_preds', 'w') as output:
+        with open(lang + '_output_preds', 'w') as output:
             for line in input:
                 line_prefix = line[:2]
                 if line_prefix == '\\g':
@@ -173,4 +173,4 @@ def write_predictions(path: str, preds, encoder: MultiVocabularyEncoder, from_vo
                     next_line += 1
                 else:
                     output.write(line)
-    print("Predictions written to ./output_preds")
+    print(f"Predictions written to ./{lang}_output_preds")
