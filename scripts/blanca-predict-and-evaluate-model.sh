@@ -1,18 +1,20 @@
 #!/bin/bash
 #SBATCH --nodes=1           # Number of requested nodes
-#SBATCH --gpus-per-node=1
-#SBATCH --gres=gpu:v100l:1
-#SBATCH --ntasks-per-node=4         # Number of requested cores
-#SBATCH --mem=64G
-#SBATCH --time=3:00:00          # Max walltime              # Specify QOS
+#SBATCH --gres=gpu:v100
+#SBATCH --ntasks=4          # Number of requested cores
+#SBATCH --mem=32G
+#SBATCH --time=12:00:00          # Max walltime              # Specify QOS
 #SBATCH --qos=blanca-kann
-#SBATCH --out=train_igt.%j.out      # Output file name
-#SBATCH --error=train_igt.%j.err
+#SBATCH --out=eval_igt.%j.out      # Output file name
+#SBATCH --error=eval_igt.%j.err
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=michael.ginn@colorado.edu
 
 # purge all existing modules
 module purge
-source ~/AutoIGT/bin/activate
+# Load the python module
+module load anaconda
+# Run Python Script
+conda activate AutoIGT
 cd "/projects/migi8081/AutoIGT/Automatic-IGT-Glossing/src"
 python3 token_class_model.py predict --lang ${LANG} --pretrained_path ${MODEL} --data_path ${PATH}
