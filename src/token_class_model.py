@@ -36,10 +36,12 @@ def create_trainer(model: RobertaForTokenClassification, dataset: Optional[Datas
         preds = np.argmax(preds, axis=2)
 
         # Decode predicted output
+        print(preds)
         decoded_preds = encoder.batch_decode(preds, from_vocabulary_index=2)
         print(decoded_preds[0:1])
 
         # Decode (gold) labels
+        print(labels)
         labels = np.where(labels != -100, labels, encoder.PAD_ID)
         decoded_labels = encoder.batch_decode(labels, from_vocabulary_index=2)
         print(decoded_labels[0:1])
