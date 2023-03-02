@@ -76,11 +76,12 @@ def load_data_file(path: str) -> List[IGTLine]:
                 # Something went wrong
                 print("Skipping line: ", line)
             else:
-                all_data.append(IGTLine(transcription=current_entry[0],
-                                        segmentation=current_entry[1],
-                                        glosses=current_entry[2],
-                                        translation=None))
-                current_entry = [None, None, None, None]
+                if not current_entry == [None, None, None, None]:
+                    all_data.append(IGTLine(transcription=current_entry[0],
+                                            segmentation=current_entry[1],
+                                            glosses=current_entry[2],
+                                            translation=None))
+                    current_entry = [None, None, None, None]
     return all_data
 
 
@@ -169,7 +170,7 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
     return raw_dataset.map(process)
 
 
-def write_predictions(path: str, lang: str, preds, encoder: MultiVocabularyEncoder, from_vocabulary_index=None):
+def write_predictions(path: str, lang: str, preds, pred_lengths: List[int], encoder: MultiVocabularyEncoder, from_vocabulary_index=None):
     """Writes the predictions to a new file, which uses the file in `path` as input"""
     print(preds[0])
     decoded_preds = encoder.batch_decode(preds, from_vocabulary_index=from_vocabulary_index)
@@ -180,7 +181,7 @@ def write_predictions(path: str, lang: str, preds, encoder: MultiVocabularyEncod
             for line in input:
                 line_prefix = line[:2]
                 if line_prefix == '\\g':
-                    output_line = line_prefix + ' ' + ' '.join(decoded_preds[next_line]) + '\n'
+                    output_line = line_prefix + ' ' + ' '.join(decoded_preds[next_line][:pred_lengths[next_line]]) + '\n'
                     output.write(output_line)
                     next_line += 1
                 else:
