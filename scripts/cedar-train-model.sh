@@ -12,6 +12,7 @@
 
 # purge all existing modules
 module purge
+module load python/3.8.10
 source ~/AutoIGT/bin/activate
-cd "~/projects/rrg-msilfver/mginn/Automatic-IGT-Glossing/src"
+cd ~/projects/rrg-msilfver/mginn/Automatic-IGT-Glossing/src
 python token_class_model.py train --lang arp --track closed
