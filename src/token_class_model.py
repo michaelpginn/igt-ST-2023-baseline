@@ -98,6 +98,7 @@ def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: s
     MODEL_INPUT_LENGTH = 512
 
     is_open_track = track == 'open'
+    print("IS OPEN", is_open_track)
 
     train_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-train-track{'2' if is_open_track else '1'}-uncovered")
     dev_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track{'2' if is_open_track else '1'}-uncovered")
@@ -125,7 +126,8 @@ def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: s
         print("Model saved at ./output")
     elif mode == 'predict':
         encoder = load_encoder(encoder_path)
-        encoder.segmented = is_open_track
+        if not hasattr(encoder, 'segmented'):
+            encoder.segmented = is_open_track
         print("ENCODER SEGMENTING INPUT: ", encoder.segmented)
         predict_data = load_data_file(data_path)
         predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizer, encoder=encoder,
