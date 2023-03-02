@@ -91,7 +91,7 @@ def create_encoder(train_data: List[IGTLine], threshold: int, tokenizer, model_t
     source_vocab = create_vocab(source_data, threshold=threshold)
 
     # Create the shared vocab for the translation and glosses
-    translation_data = [tokenizer(line.translation) for line in train_data]
+    translation_data = [tokenizer(line.translation) if line.translation is not None else None for line in train_data]
     should_segment = split_morphemes or (model_type == ModelType.SEQ_TO_SEQ)
     gloss_data = [line.gloss_list(segmented=should_segment) for line in train_data]
 

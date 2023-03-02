@@ -15,4 +15,4 @@
 module purge
 source ~/AutoIGT/bin/activate
 cd "~/projects/rrg-msilfver/mginn/Automatic-IGT-Glossing/src"
-python token_class_model.py train --lang arp
+python token_class_model.py train --lang arp --track closed
