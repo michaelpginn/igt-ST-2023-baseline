@@ -82,6 +82,12 @@ def load_data_file(path: str) -> List[IGTLine]:
                                             glosses=current_entry[2],
                                             translation=None))
                     current_entry = [None, None, None, None]
+        # Might have one extra line at the end
+        if not current_entry == [None, None, None, None]:
+            all_data.append(IGTLine(transcription=current_entry[0],
+                                    segmentation=current_entry[1],
+                                    glosses=current_entry[2],
+                                    translation=None))
     return all_data
 
 
