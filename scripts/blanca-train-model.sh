@@ -17,4 +17,4 @@ module load anaconda
 # Run Python Script
 conda activate AutoIGT
 cd "/projects/migi8081/AutoIGT/Automatic-IGT-Glossing/src"
-python3 token_class_model.py train --lang ddo
+python3 token_class_model.py train --lang ddo --track open
