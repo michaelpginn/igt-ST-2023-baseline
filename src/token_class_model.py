@@ -98,6 +98,7 @@ def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: s
     MODEL_INPUT_LENGTH = 512
 
     is_open_track = track == 'open'
+    print("IS OPEN", is_open_track)
 
     train_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-train-track{'2' if is_open_track else '1'}-uncovered")
     dev_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track{'2' if is_open_track else '1'}-uncovered")
