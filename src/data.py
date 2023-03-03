@@ -203,7 +203,7 @@ def write_predictions(path: str, lang: str, preds, pred_input_data, encoder: Mul
                 line_prefix = line[:2]
                 if line_prefix == '\\g':
                     output_line = create_gloss_line(glosses=decoded_preds[next_line], transcription_tokens=pred_input_data[next_line]['tokenized_transcription'])
-                    output_line = line_prefix + ' ' + output_line + '\n'
+                    output_line = line_prefix + output_line + '\n'
                     output.write(output_line)
                     next_line += 1
                 else:
