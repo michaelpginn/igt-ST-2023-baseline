@@ -188,7 +188,7 @@ def write_predictions(path: str, lang: str, preds, pred_input_data, encoder: Mul
         If tokens are segmented, write morphemes together
         """
         output_line = ''
-        for (token, gloss) in (transcription_tokens, glosses):
+        for (token, gloss) in zip(transcription_tokens, glosses):
             if token[0] == '-':
                 output_line += f"-{gloss}"
             else:
