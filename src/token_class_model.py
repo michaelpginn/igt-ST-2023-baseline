@@ -33,7 +33,7 @@ def create_trainer(model: RobertaForTokenClassification, dataset: Optional[Datas
         preds, labels = eval_preds
         if isinstance(preds, tuple):
             preds = preds[0]
-        preds = np.argmax(preds, axis=2)
+        # preds = np.argmax(preds, axis=2)
 
         # Decode predicted output
         print(preds)
@@ -50,6 +50,9 @@ def create_trainer(model: RobertaForTokenClassification, dataset: Optional[Datas
             return eval_morpheme_glosses(pred_morphemes=decoded_preds, gold_morphemes=decoded_labels)
         else:
             return eval_word_glosses(pred_words=decoded_preds, gold_words=decoded_labels)
+
+    def preprocess_logits_for_metrics(logits, labels):
+        return np.argmax(logits, axis=2)
 
     args = TrainingArguments(
         output_dir=f"../training-checkpoints",
@@ -71,7 +74,8 @@ def create_trainer(model: RobertaForTokenClassification, dataset: Optional[Datas
         args,
         train_dataset=dataset["train"] if dataset else None,
         eval_dataset=dataset["dev"] if dataset else None,
-        compute_metrics=compute_metrics
+        compute_metrics=compute_metrics,
+        preprocess_logits_for_metrics=preprocess_logits_for_metrics
     )
     return trainer
 
