@@ -39,6 +39,8 @@ Trained models: [download here](https://o365coloradoedu-my.sharepoint.com/:f:/g/
 | Lang | Morpheme Acc| Word Acc | BLEU (Morpheme) | Stems | Grams |
 | --- | --- | --- | --- | --- | --- |
 | ddo | Ovr: 85.0<br>Avg: 86.0 | Ovr: 74.2<br>Avg: 75.8 | 68.6 | P: 89.3<br>R: 86.6<br>F1: 87.9 | P: 82.2<br>R: 83.6<br>F1: 82.9 |
-| ddo | Ovr: 30.0<br>Avg: 30.2 | Ovr: 25.0<br>Avg: 25.7 | 14.2 | P: 37.8<br>R: 15.0<br>F1: 21.5 | P: 41.8<br>R: 37.8<br>F1: 39.7 |
+| git | Ovr: 30.0<br>Avg: 30.2 | Ovr: 25.0<br>Avg: 25.7 | 14.2 | P: 37.8<br>R: 15.0<br>F1: 21.5 | P: 41.8<br>R: 37.8<br>F1: 39.7 |
+| lez | Ovr: 50.1<br>Avg: 52.5 | Ovr: 32.6<br>Avg: 39.4 | 42.0 | P: 61.2<br>R: 48.6<br>F1: 54.2 | P: 50.1<br>R: 53.5<br>F1: 51.8 |
 | nyb | Ovr: 89.2<br>Avg: 88.5 | Ovr: 84.7<br>Avg: 83.6 | 78.4 | P: 92.5<br>R: 90.5<br>F1: 91.5 | P: 85.9<br>R: 87.6<br>F1: 86.8 |
+| usp | Ovr: 81.3<br>Avg: 76.2 | Ovr: 75.9<br>Avg: 72.0 | 64.9 | P: 79.4<br>R: 74.0<br>F1: 76.6 | P: 83.7<br>R: 90.4<br>F1: 87.0 |
 
