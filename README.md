@@ -35,3 +35,8 @@ Trained models: [download here](https://o365coloradoedu-my.sharepoint.com/:f:/g/
 | nyb | Ovr: 77.1<br>Avg: 78.2 | Ovr: 83.9<br>Avg: 82.4 | 74.2 | P: 86.2<br>R: 78.7<br>F1: 82.3 | P: 78.6<br>R: 75.3<br>F1: 76.9 |
 | usp | Ovr: 63.1<br>Avg: 65.5 | Ovr: 74.0<br>Avg: 70.3 | 53.8 | P: 72.0<br>R: 62.7<br>F1: 67.0 | P: 61.3<br>R: 63.7<br>F1: 62.4 |
 
+#### Open Track
+| Lang | Morpheme Acc| Word Acc | BLEU (Morpheme) | Stems | Grams |
+| --- | --- | --- | --- | --- | --- |
+| ddo | Ovr: 85.0<br>Avg: 86.0 | Ovr: 74.2<br>Avg: 75.8 | 68.6 | P: 89.3<br>R: 86.6<br>F1: 87.9 | P: 82.2<br>R: 83.6<br>F1: 82.9 |
+
