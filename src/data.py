@@ -125,8 +125,8 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
     raw_dataset = Dataset.from_list([line.__dict__() for line in data])
 
     def process(row):
-        source_enc = encoder.encode(tokenizer(row['segmentation' if encoder.segmented else 'transcription']),
-                                    vocabulary_index=0)
+        tokenized_transcription = tokenizer(row['segmentation' if encoder.segmented else 'transcription'])
+        source_enc = encoder.encode(tokenized_transcription, vocabulary_index=0)
         if row['translation'] is not None:
             translation_enc = encoder.encode(tokenizer(row['translation']), vocabulary_index=1)
             combined_enc = source_enc + [encoder.SEP_ID] + translation_enc
@@ -154,7 +154,8 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
                 # Pad both
                 output_enc += [encoder.PAD_ID] * (model_input_length - len(output_enc))
                 decoder_input_ids += [encoder.PAD_ID] * (model_input_length - len(decoder_input_ids))
-                return {'input_ids': torch.tensor(combined_enc).to(device),
+                return {'tokenized_transcription': tokenized_transcription,
+                        'input_ids': torch.tensor(combined_enc).to(device),
                         'attention_mask': torch.tensor(attention_mask).to(device),
                         'labels': torch.tensor(output_enc).to(device),
                         'decoder_input_ids': torch.tensor(decoder_input_ids).to(device)}
@@ -164,20 +165,36 @@ def prepare_dataset(data: List[IGTLine], tokenizer, encoder: MultiVocabularyEnco
                 if translation_enc is not None:
                     output_enc += [encoder.PAD_ID] * (len(translation_enc) + 1)
                 output_enc += [-100] * (model_input_length - len(output_enc))
-                return {'input_ids': torch.tensor(combined_enc).to(device),
+                return {'tokenized_transcription': tokenized_transcription,
+                        'input_ids': torch.tensor(combined_enc).to(device),
                         'attention_mask': torch.tensor(attention_mask).to(device),
                         'labels': torch.tensor(output_enc).to(device)}
 
         else:
             # If we have no glosses, this must be a prediction task
-            return {'input_ids': torch.tensor(combined_enc).to(device),
+            return {'tokenized_transcription': tokenized_transcription,
+                    'input_ids': torch.tensor(combined_enc).to(device),
                     'attention_mask': torch.tensor(attention_mask).to(device)}
 
     return raw_dataset.map(process)
 
 
-def write_predictions(path: str, lang: str, preds, pred_lengths: List[int], encoder: MultiVocabularyEncoder, from_vocabulary_index=None):
+def write_predictions(path: str, lang: str, preds, pred_input_data, encoder: MultiVocabularyEncoder, from_vocabulary_index=None):
     """Writes the predictions to a new file, which uses the file in `path` as input"""
+    def create_gloss_line(glosses, transcription_tokens):
+        """
+        Write a gloss for each transcription token
+        We should never write more glosses than there are tokens
+        If tokens are segmented, write morphemes together
+        """
+        output_line = ''
+        for (token, gloss) in (transcription_tokens, glosses):
+            if token[0] == '-':
+                output_line += f"-{gloss}"
+            else:
+                output_line += f" {gloss}"
+        return output_line
+
     decoded_preds = encoder.batch_decode(preds, from_vocabulary_index=from_vocabulary_index)
     next_line = 0
     with open(path, 'r') as input:
@@ -185,7 +202,8 @@ def write_predictions(path: str, lang: str, preds, pred_lengths: List[int], enco
             for line in input:
                 line_prefix = line[:2]
                 if line_prefix == '\\g':
-                    output_line = line_prefix + ' ' + ' '.join(decoded_preds[next_line][:pred_lengths[next_line]]) + '\n'
+                    output_line = create_gloss_line(glosses=decoded_preds[next_line], transcription_tokens=pred_input_data[next_line]['tokenized_transcription'])
+                    output_line = line_prefix + ' ' + output_line + '\n'
                     output.write(output_line)
                     next_line += 1
                 else:

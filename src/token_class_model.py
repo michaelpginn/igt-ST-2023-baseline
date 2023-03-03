@@ -138,8 +138,7 @@ def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: s
         trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
         preds = trainer.predict(test_dataset=predict_data).predictions
         preds = np.argmax(preds, axis=2)
-        input_lengths = [len(tokenizer(transcription)) for transcription in predict_data['transcription']]
-        write_predictions(data_path, lang=lang, preds=preds, pred_lengths=input_lengths, encoder=encoder, from_vocabulary_index=2)
+        write_predictions(data_path, lang=lang, preds=preds, pred_input_data=predict_data, encoder=encoder, from_vocabulary_index=2)
 
 
 if __name__ == "__main__":
