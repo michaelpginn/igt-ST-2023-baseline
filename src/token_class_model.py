@@ -52,7 +52,7 @@ def create_trainer(model: RobertaForTokenClassification, dataset: Optional[Datas
             return eval_word_glosses(pred_words=decoded_preds, gold_words=decoded_labels)
 
     def preprocess_logits_for_metrics(logits, labels):
-        return np.argmax(logits, axis=2)
+        return logits.argmax(dim=1)
 
     args = TrainingArguments(
         output_dir=f"../training-checkpoints",
