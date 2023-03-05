@@ -14,13 +14,13 @@ def eval_accuracy(pred: List[List[str]], gold: List[List[str]]) -> dict:
     summed_accuracies = 0
 
     for (entry_pred, entry_gold, i) in zip(pred, gold, range(len(gold))):
-        print(entry_pred, entry_gold, i)
         entry_correct_predictions = 0
 
-        for token_index in range(len(entry_gold)):
-            # For each token, check if it matches
-            if token_index < len(entry_pred) and entry_pred[token_index] == entry_gold[token_index] and entry_pred[token_index] != '[UNK]':
-                entry_correct_predictions += 1
+        if entry_pred is not None:
+            for token_index in range(len(entry_gold)):
+                # For each token, check if it matches
+                if token_index < len(entry_pred) and entry_pred[token_index] == entry_gold[token_index] and entry_pred[token_index] != '[UNK]':
+                    entry_correct_predictions += 1
 
         entry_accuracy = (entry_correct_predictions / len(entry_gold))
         summed_accuracies += entry_accuracy
