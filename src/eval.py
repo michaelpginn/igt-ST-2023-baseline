@@ -14,6 +14,7 @@ def eval_accuracy(pred: List[List[str]], gold: List[List[str]]) -> dict:
     summed_accuracies = 0
 
     for (entry_pred, entry_gold, i) in zip(pred, gold, range(len(gold))):
+        print(entry_pred, entry_gold, i)
         entry_correct_predictions = 0
 
         for token_index in range(len(entry_gold)):
