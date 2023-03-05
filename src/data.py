@@ -31,7 +31,7 @@ class IGTLine:
         :param segmented: If True, will return each morpheme gloss as a separate item.
         """
         if self.glosses is None:
-            return None
+            return []
         if not segmented:
             return self.glosses.split()
         else:

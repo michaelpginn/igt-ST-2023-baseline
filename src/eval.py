@@ -16,11 +16,10 @@ def eval_accuracy(pred: List[List[str]], gold: List[List[str]]) -> dict:
     for (entry_pred, entry_gold, i) in zip(pred, gold, range(len(gold))):
         entry_correct_predictions = 0
 
-        if entry_pred is not None:
-            for token_index in range(len(entry_gold)):
-                # For each token, check if it matches
-                if token_index < len(entry_pred) and entry_pred[token_index] == entry_gold[token_index] and entry_pred[token_index] != '[UNK]':
-                    entry_correct_predictions += 1
+        for token_index in range(len(entry_gold)):
+            # For each token, check if it matches
+            if token_index < len(entry_pred) and entry_pred[token_index] == entry_gold[token_index] and entry_pred[token_index] != '[UNK]':
+                entry_correct_predictions += 1
 
         entry_accuracy = (entry_correct_predictions / len(entry_gold))
         summed_accuracies += entry_accuracy
@@ -44,7 +43,7 @@ def eval_stems_grams(pred: List[List[str]], gold: List[List[str]]) -> dict:
             token_type = 'gram' if entry_gold[token_index].isupper() else 'stem'
             perf[token_type]['gold'] += 1
 
-            if entry_pred is not None and token_index < len(entry_pred):
+            if token_index < len(entry_pred):
                 pred_token_type = 'gram' if entry_pred[token_index].isupper() else 'stem'
                 perf[pred_token_type]['pred'] += 1
 
