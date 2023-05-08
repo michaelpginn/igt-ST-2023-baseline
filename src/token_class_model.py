@@ -86,7 +86,8 @@ languages = {
     'lez': 'Lezgi',
     'nyb': 'Nyangbo',
     'ddo': 'Tsez',
-    'usp': 'Uspanteko'
+    'usp': 'Uspanteko',
+    'ntu': 'Natugu'
 }
 
 
