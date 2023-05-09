@@ -22,6 +22,6 @@ for lang in arp git lez nyb ddo usp ntu
 do
   for track in open closed
   do
-    python3 token_class_model.py predict --lang $lang --track $track --pretrained_path "../src/$lang-$track"
+    python3 token_class_model.py predict --lang $lang --track $track --pretrained_path "../src/$lang-$track/output"
   done
 done
