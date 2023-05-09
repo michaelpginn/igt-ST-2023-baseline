@@ -20,7 +20,7 @@ cd "/projects/migi8081/AutoIGT/Automatic-IGT-Glossing/src"
 
 #for lang in arp git lez nyb ddo usp ntu
 #do
-python3 evaluate.py --pred ../src/ntu_output_preds_closed --gold ../../GlossingSTPrivate/splits/Natugu/ntu-dev-track1-uncovered
-python3 evaluate.py --pred ../src/ntu_output_preds_open--gold ../../GlossingSTPrivate/splits/Natugu/ntu-dev-track2-uncovered
+python3 eval.py --pred ../src/preds/ntu_output_preds_closed --gold ../../GlossingSTPrivate/splits/Natugu/ntu-dev-track1-uncovered
+python3 eval.py --pred ../src/preds/ntu_output_preds_open--gold ../../GlossingSTPrivate/splits/Natugu/ntu-dev-track2-uncovered
 
 #done
