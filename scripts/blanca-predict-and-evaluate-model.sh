@@ -17,4 +17,11 @@ module load anaconda
 # Run Python Script
 conda activate AutoIGT
 cd "/projects/migi8081/AutoIGT/Automatic-IGT-Glossing/src"
-python3 token_class_model.py predict --lang ${LANG} --pretrained_path ${MODEL} --data_path ${PATH}
+
+for lang in arp git lez nyb ddo usp ntu
+do
+  for track in open closed
+  do
+    python3 token_class_model.py predict --lang $lang --track $track --pretrained_path "../src/$lang-$track"
+  done
+done

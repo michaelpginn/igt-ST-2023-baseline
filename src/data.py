@@ -198,7 +198,7 @@ def write_predictions(path: str, lang: str, preds, pred_input_data, encoder: Mul
     decoded_preds = encoder.batch_decode(preds, from_vocabulary_index=from_vocabulary_index)
     next_line = 0
     with open(path, 'r') as input:
-        with open(lang + '_output_preds', 'w') as output:
+        with open(f"/preds/{lang}_output_preds_{'open' if encoder.segmented else 'closed'}", 'w') as output:
             for line in input:
                 line_prefix = line[:2]
                 if line_prefix == '\\g':
@@ -208,4 +208,4 @@ def write_predictions(path: str, lang: str, preds, pred_input_data, encoder: Mul
                     next_line += 1
                 else:
                     output.write(line)
-    print(f"Predictions written to ./{lang}_output_preds")
+    print(f"Predictions written to ./preds/{lang}_output_preds")

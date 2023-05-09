@@ -132,13 +132,22 @@ def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: s
         trainer.save_model('./output')
         print("Model saved at ./output")
     elif mode == 'predict':
-        encoder = load_encoder(encoder_path)
+        if encoder_path:
+            encoder = load_encoder(encoder_path)
+        else:
+            encoder = create_encoder(train_data, tokenizer=tokenizer, threshold=1,
+                                     model_type=ModelType.TOKEN_CLASS, split_morphemes=is_open_track)
         if not hasattr(encoder, 'segmented'):
             encoder.segmented = is_open_track
         print("ENCODER SEGMENTING INPUT: ", encoder.segmented)
-        predict_data = load_data_file(data_path)
-        predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizer, encoder=encoder,
-                                       model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
+
+        if data_path:
+            predict_data = load_data_file(data_path)
+            predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizer, encoder=encoder,
+                                           model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
+        else:
+            predict_data = dev_data
+
         model = RobertaForTokenClassification.from_pretrained(pretrained_path)
         trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
         preds = trainer.predict(test_dataset=predict_data).predictions
