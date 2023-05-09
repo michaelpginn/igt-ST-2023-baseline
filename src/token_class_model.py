@@ -143,10 +143,12 @@ def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: s
 
         if data_path:
             predict_data = load_data_file(data_path)
-            predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizer, encoder=encoder,
-                                           model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS, device=device)
         else:
             predict_data = dev_data
+
+        predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizer, encoder=encoder,
+                                       model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS,
+                                       device=device)
 
         model = RobertaForTokenClassification.from_pretrained(pretrained_path)
         trainer = create_trainer(model, dataset=None, encoder=encoder, batch_size=16, lr=2e-5, max_epochs=50)
