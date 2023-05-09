@@ -144,8 +144,8 @@ def main(mode: str, lang: str, track: str, pretrained_path: str, encoder_path: s
         if data_path:
             predict_data = load_data_file(data_path)
         else:
-            predict_data = dev_data
-            data_path = f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-dev-track{'2' if is_open_track else '1'}-covered"
+            predict_data = load_data_file(f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-test-track{'2' if is_open_track else '1'}-uncovered")
+            data_path = f"../../GlossingSTPrivate/splits/{languages[lang]}/{lang}-test-track{'2' if is_open_track else '1'}-covered"
 
         predict_data = prepare_dataset(data=predict_data, tokenizer=tokenizer, encoder=encoder,
                                        model_input_length=MODEL_INPUT_LENGTH, model_type=ModelType.TOKEN_CLASS,
