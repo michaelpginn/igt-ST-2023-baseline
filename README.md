@@ -1,4 +1,4 @@
-# Automatic-IGT-Glossing
+# igt-ST-2023-baseline
 This repository provides the baseline system for the task https://github.com/sigmorphon/2023glossingST. 
 
 Train model:
